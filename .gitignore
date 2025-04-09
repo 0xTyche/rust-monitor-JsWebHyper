@@ -1,0 +1,30 @@
+# 编译输出
+/target/
+**/*.rs.bk
+
+# 配置文件
+.env
+config.yaml
+
+# 日志文件
+/logs/
+
+# 缓存文件
+.cache/
+*.db
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# IDE文件
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# 临时文件
+*.tmp
+*.temp
+*.bak 

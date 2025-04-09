@@ -1,0 +1,73 @@
+# Hyperliquid 监控系统配置示例
+# 重命名为 config.yaml 使用
+
+# JS数据监控配置
+web_js_monitor:
+  targets:
+    # 监控交易所页面的价格数据
+    - url: "https://app.hyperliquid.xyz/"
+      selector: "document.querySelector('.price-container').textContent"
+      interval_seconds: 60
+      
+    # 监控社区页面的活跃用户数
+    - url: "https://community.hyperliquid.xyz/"
+      selector: "document.querySelector('.stats-container .users-count').textContent"
+      interval_seconds: 300
+
+# 静态网页监控配置
+static_page_monitor:
+  targets:
+    # 监控官方博客公告
+    - url: "https://hyperliquid.xyz/blog"
+      selector: "#recent-posts"
+      interval_seconds: 3600
+      
+    # 监控API文档更新
+    - url: "https://hyperliquid.xyz/docs/api"
+      selector: "main"
+      interval_seconds: 7200
+
+# Hyperliquid用户交易监控配置
+hyperliquid_monitor:
+  # 要监控的用户地址列表
+  addresses:
+    - "0xc64cc00b46101bd40aa1c3121195e85c0b0918d8"
+    - "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+  
+  # 监控间隔（秒）
+  interval_seconds: 120
+  
+  # 是否监控现货交易
+  spot_trading: true
+  
+  # 是否监控合约交易
+  contract_trading: true
+
+# 通知配置
+notifications:
+  # Server酱推送通知
+  server_chan:
+    enabled: true
+    # 最小通知间隔（分钟）
+    interval_minutes: 5
+  
+  # 邮件通知
+  email:
+    enabled: false
+    # 邮件主题前缀
+    subject_prefix: "[Hyperliquid监控]"
+    # 最小通知间隔（分钟）
+    interval_minutes: 30
+
+# 日志配置
+logging:
+  # 日志级别: error, warn, info, debug, trace
+  level: "info"
+  # 是否输出到文件
+  file_output: true
+  # 日志文件路径
+  file_path: "logs/monitor.log"
+  # 日志文件最大大小（MB）
+  max_size_mb: 10
+  # 保留的日志文件数量
+  max_files: 5 
