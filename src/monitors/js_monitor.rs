@@ -120,4 +120,8 @@ impl Monitor for JsMonitor {
     fn interval(&self) -> u64 {
         self.interval_secs
     }
+    
+    fn get_name(&self) -> String {
+        format!("JavaScript monitor for {}", self.url)
+    }
 } 

@@ -1,18 +1,18 @@
 {
   "notification": {
-    "enabled": false,
+    "enabled": true,
     "server_chan_key": "SCT267319T1JU2krXcV93959svLByRvRWm"
   },
   "tasks": [
     {
-      "name": "test js",
-      "task_type": "JavaScript",
-      "url": "https://example.com",
-      "selector": "https://pump.science/api/databaseTokensApi",
-      "address": "",
+      "name": "New Task",
+      "task_type": "Static Web",
+      "url": "https://pump.science/api/databaseTokensApi",
+      "selector": "",
+      "address": "0x...",
       "monitor_spot": true,
       "monitor_contract": false,
-      "interval_secs": 5,
+      "interval_secs": 1,
       "enabled": true
     }
   ]

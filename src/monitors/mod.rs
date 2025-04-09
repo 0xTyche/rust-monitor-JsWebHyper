@@ -23,6 +23,9 @@ pub trait Monitor: Send + Sync {
     
     /// Get monitoring interval (seconds)
     fn interval(&self) -> u64;
+    
+    /// Get monitor name or description for notifications
+    fn get_name(&self) -> String;
 }
 
 impl Display for Change {

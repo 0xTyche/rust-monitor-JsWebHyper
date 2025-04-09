@@ -125,6 +125,45 @@ async fn run_monitor<M: Monitor>(mut monitor: M) -> Result<()> {
     let server_chan_key = std::env::var("SERVER_CHAN_KEY").unwrap_or_default();
     let notifier = ServerChanNotifier::new(&server_chan_key);
     
+    // Get initial content and send initial notification
+    let monitor_name = monitor.get_name();
+    info!("Starting monitoring: {}", monitor_name);
+    
+    // First check to get initial content
+    match monitor.check().await {
+        Ok(Some(change)) => {
+            // Already have a change on first check - unusual but possible
+            info!("Initial check detected change: {}", change.message);
+            
+            // Send initial notification with the change details
+            let initial_message = format!("Started monitoring: {}", monitor_name);
+            if let Err(e) = notifier.send(&initial_message, &change.details).await {
+                error!("Failed to send initial notification: {}", e);
+            } else {
+                info!("Initial notification sent");
+            }
+        },
+        Ok(None) => {
+            // Normal case - content captured but no change
+            info!("Initial content captured for: {}", monitor_name);
+            
+            // Send notification about monitoring start
+            let initial_message = format!("Started monitoring: {}", monitor_name);
+            let details = format!("Initial content captured. Will notify when changes are detected.");
+            
+            if let Err(e) = notifier.send(&initial_message, &details).await {
+                error!("Failed to send initial notification: {}", e);
+            } else {
+                info!("Initial notification sent");
+            }
+        },
+        Err(e) => {
+            // Error on first check
+            error!("Error getting initial content: {}", e);
+            // Continue to monitor anyway
+        },
+    }
+    
     // Start monitoring loop
     loop {
         match monitor.check().await {

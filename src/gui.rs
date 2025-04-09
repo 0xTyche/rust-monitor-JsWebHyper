@@ -22,6 +22,7 @@ use monitors::{
     js_monitor::JsMonitor,
     static_monitor::StaticMonitor,
     hyperliquid_monitor::HyperliquidMonitor,
+    api_monitor::ApiMonitor,
     Monitor, Change
 };
 use notifiers::server_chan::ServerChanNotifier;
@@ -54,6 +55,7 @@ pub enum TaskType {
     Js,
     Static,
     Hyperliquid,
+    Api,
 }
 
 impl fmt::Display for TaskType {
@@ -62,6 +64,7 @@ impl fmt::Display for TaskType {
             TaskType::Js => write!(f, "JavaScript"),
             TaskType::Static => write!(f, "Static Web"),
             TaskType::Hyperliquid => write!(f, "Hyperliquid"),
+            TaskType::Api => write!(f, "API Monitor"),
         }
     }
 }
@@ -72,6 +75,7 @@ impl TaskType {
             "JavaScript" => Some(TaskType::Js),
             "Static Web" => Some(TaskType::Static),
             "Hyperliquid" => Some(TaskType::Hyperliquid),
+            "API Monitor" => Some(TaskType::Api),
             _ => None,
         }
     }
@@ -325,6 +329,14 @@ impl MonitorApp {
                 },
                 "Static Web" => {
                     let mut monitor = StaticMonitor::new(&task_config.url, &task_config.selector, task_config.interval_secs);
+                    run_monitor_task(task_index, &mut monitor, notifier, tx).await;
+                },
+                "API Monitor" => {
+                    let mut monitor = ApiMonitor::new(
+                        task_config.url, 
+                        task_config.selector, 
+                        task_config.interval_secs
+                    );
                     run_monitor_task(task_index, &mut monitor, notifier, tx).await;
                 },
                 "Hyperliquid" => {
@@ -654,6 +666,13 @@ impl MonitorApp {
                     ui.heading("Add Web Monitor");
                 }
             },
+            "API Monitor" => {
+                if is_edit_mode {
+                    ui.heading("Edit API Monitor");
+                } else {
+                    ui.heading("Add API Monitor");
+                }
+            },
             "Hyperliquid" => {
                 if is_edit_mode {
                     ui.heading("Edit Hyperliquid Monitor");
@@ -680,6 +699,12 @@ impl MonitorApp {
                     self.editing_task.selector = "#price-container .value".to_string();
                 }
             }
+            if ui.radio_value(&mut self.editing_task.task_type, "API Monitor".to_string(), "API Monitor").clicked() {
+                // Reset relevant fields when switching to API monitor type
+                if !is_edit_mode {
+                    self.editing_task.selector = "$.data.price".to_string();
+                }
+            }
             if ui.radio_value(&mut self.editing_task.task_type, "Hyperliquid".to_string(), "Hyperliquid").clicked() {
                 // Reset relevant fields when switching to Hyperliquid monitor type
                 if !is_edit_mode {
@@ -694,6 +719,15 @@ impl MonitorApp {
         match self.editing_task.task_type.as_str() {
             "JavaScript" => {
                 // JS monitor form
+                ui.horizontal(|ui| {
+                    ui.add_sized([label_width, 24.0], egui::Label::new("Website URL:"));
+                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.url)
+                        .hint_text("https://example.com")
+                        .margin(egui::vec2(8.0, 4.0)));
+                });
+                
+                ui.add_space(10.0);
+                
                 ui.horizontal(|ui| {
                     ui.add_sized([label_width, 24.0], egui::Label::new("JS Selector:"));
                     ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.selector)
@@ -734,6 +768,42 @@ impl MonitorApp {
                     ui.add_sized([label_width, 24.0], egui::Label::new("CSS Selector:"));
                     ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.selector)
                         .hint_text("#price-container .value")
+                        .margin(egui::vec2(8.0, 4.0)));
+                });
+                
+                ui.add_space(10.0);
+                
+                ui.horizontal(|ui| {
+                    ui.add_sized([label_width, 24.0], egui::Label::new("ServerChan Key:"));
+                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.configs.notification.server_chan_key)
+                        .hint_text("ServerChan API key")
+                        .margin(egui::vec2(8.0, 4.0)));
+                });
+                
+                ui.add_space(10.0);
+                
+                ui.horizontal(|ui| {
+                    ui.add_sized([label_width, 24.0], egui::Label::new("Notes:"));
+                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.name)
+                        .hint_text("Optional notes")
+                        .margin(egui::vec2(8.0, 4.0)));
+                });
+            },
+            "API Monitor" => {
+                // API monitor form
+                ui.horizontal(|ui| {
+                    ui.add_sized([label_width, 24.0], egui::Label::new("API URL:"));
+                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.url)
+                        .hint_text("https://api.example.com/data")
+                        .margin(egui::vec2(8.0, 4.0)));
+                });
+                
+                ui.add_space(10.0);
+                
+                ui.horizontal(|ui| {
+                    ui.add_sized([label_width, 24.0], egui::Label::new("JSONPath:"));
+                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.selector)
+                        .hint_text("$.data.price (leave empty to monitor entire response)")
                         .margin(egui::vec2(8.0, 4.0)));
                 });
                 
@@ -889,6 +959,10 @@ impl MonitorApp {
                                     ui.label(format!("Type: Static Webpage Monitor | URL: {} | Selector: {} | Interval: {}s", 
                                                task_clone.url, task_clone.selector, task_clone.interval_secs));
                                 },
+                                "API Monitor" => {
+                                    ui.label(format!("Type: API Monitor | URL: {} | JSONPath: {} | Interval: {}s", 
+                                               task_clone.url, task_clone.selector, task_clone.interval_secs));
+                                },
                                 "Hyperliquid" => {
                                     ui.label(format!("Type: Hyperliquid Monitor | Address: {} | Spot: {} | Contract: {} | Interval: {}s", 
                                                task_clone.address, 
@@ -997,6 +1071,77 @@ async fn run_monitor_task<M: Monitor>(
     // Send task start message
     let _ = tx.send(Message::TaskStatusChanged(task_index, TaskStatus::Running)).await;
     
+    // Get initial content and send initial notification
+    match monitor.check().await {
+        Ok(Some(change)) => {
+            // This is unusual - we already have a change on first check
+            // Still, we'll treat it as our initial status
+            let initial_message = format!("Started monitoring: {}", change.message);
+            
+            // Send notification about monitoring start with initial content
+            if let Some(notifier) = &notifier {
+                if let Err(e) = notifier.send(&initial_message, &change.details).await {
+                    let _ = tx.send(Message::Log(
+                        format!("Failed to send initial notification: {}", e),
+                        Color32::RED
+                    )).await;
+                } else {
+                    let _ = tx.send(Message::Log(
+                        format!("Initial notification sent: {}", initial_message),
+                        Color32::LIGHT_BLUE
+                    )).await;
+                }
+            }
+            
+            // Also send to our message system
+            let _ = tx.send(Message::ChangeDetected(task_index, change.clone())).await;
+        },
+        Ok(None) => {
+            // Normal case - no change but we have initial content
+            // Get task name and use it in initial notification
+            let task_note = &monitor.get_name();
+            let initial_message = format!("Started monitoring: {}", task_note);
+            let details = format!("Initial content captured. Will notify when changes are detected.");
+            
+            // Send notification about monitoring start
+            if let Some(notifier) = &notifier {
+                if let Err(e) = notifier.send(&initial_message, &details).await {
+                    let _ = tx.send(Message::Log(
+                        format!("Failed to send initial notification: {}", e),
+                        Color32::RED
+                    )).await;
+                } else {
+                    let _ = tx.send(Message::Log(
+                        format!("Initial notification sent: {}", initial_message),
+                        Color32::LIGHT_BLUE
+                    )).await;
+                }
+            }
+            
+            // Log the start
+            let _ = tx.send(Message::Log(
+                format!("Task #{} initialized with initial content", task_index + 1),
+                Color32::LIGHT_GREEN
+            )).await;
+        },
+        Err(e) => {
+            // Error on first check
+            let _ = tx.send(Message::TaskStatusChanged(
+                task_index,
+                TaskStatus::Error
+            )).await;
+            
+            let _ = tx.send(Message::Log(
+                format!("Error getting initial content: {}", e),
+                Color32::RED
+            )).await;
+            
+            // Wait for a while before retrying
+            tokio::time::sleep(Duration::from_secs(interval_secs)).await;
+        },
+    }
+    
+    // Main monitoring loop
     loop {
         match monitor.check().await {
             Ok(Some(change)) => {

@@ -139,4 +139,8 @@ impl Monitor for ApiMonitor {
     fn interval(&self) -> u64 {
         self.interval_secs
     }
+    
+    fn get_name(&self) -> String {
+        format!("API monitor for {}", self.url)
+    }
 } 

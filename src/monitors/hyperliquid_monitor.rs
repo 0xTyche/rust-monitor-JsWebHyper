@@ -240,4 +240,8 @@ impl Monitor for HyperliquidMonitor {
     fn interval(&self) -> u64 {
         self.interval_secs
     }
+    
+    fn get_name(&self) -> String {
+        format!("Hyperliquid account monitor for {}", self.address)
+    }
 } 

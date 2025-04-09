@@ -56,6 +56,13 @@ impl StaticMonitor {
         let html = response.text()
             .await
             .map_err(|e| anyhow!("Failed to read response content: {}", e))?;
+        
+        // If selector is empty or just whitespace, return the entire page content
+        let selector = self.selector.trim();
+        if selector.is_empty() || selector == "*" || selector == "body" {
+            debug!("Using entire page content: {} bytes", html.len());
+            return Ok(html);
+        }
             
         // Parse HTML
         let document = Html::parse_document(&html);
@@ -121,5 +128,9 @@ impl Monitor for StaticMonitor {
     
     fn interval(&self) -> u64 {
         self.interval_secs
+    }
+    
+    fn get_name(&self) -> String {
+        format!("Static webpage monitor for {}", self.url)
     }
 } 
