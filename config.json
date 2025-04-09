@@ -1,6 +1,6 @@
 {
   "notification": {
-    "enable_server_chan": false,
+    "enabled": false,
     "server_chan_key": ""
   },
   "tasks": []

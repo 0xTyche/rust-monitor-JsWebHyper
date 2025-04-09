@@ -5,21 +5,21 @@ pub mod hyperliquid_monitor;
 use anyhow::Result;
 use std::fmt::Display;
 
-/// 监控到的变化信息
+/// Change information detected by monitors
 #[derive(Clone)]
 pub struct Change {
-    /// 变化摘要信息
+    /// Change summary message
     pub message: String,
-    /// 变化详细信息
+    /// Change detailed information
     pub details: String,
 }
 
-/// 监控器特性，所有类型的监控器都需要实现该特性
+/// Monitor trait, all types of monitors need to implement this trait
 pub trait Monitor: Send + Sync {
-    /// 执行一次检查，返回变化信息或错误
+    /// Execute a check, returns change information or error
     async fn check(&mut self) -> Result<Option<Change>>;
     
-    /// 获取监控间隔（秒）
+    /// Get monitoring interval (seconds)
     fn interval(&self) -> u64;
 }
 
