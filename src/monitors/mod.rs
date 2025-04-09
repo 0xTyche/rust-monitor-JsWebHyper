@@ -1,3 +1,4 @@
+pub mod api_monitor;
 pub mod js_monitor;
 pub mod static_monitor;
 pub mod hyperliquid_monitor;
@@ -15,6 +16,7 @@ pub struct Change {
 }
 
 /// Monitor trait, all types of monitors need to implement this trait
+#[async_trait::async_trait]
 pub trait Monitor: Send + Sync {
     /// Execute a check, returns change information or error
     async fn check(&mut self) -> Result<Option<Change>>;

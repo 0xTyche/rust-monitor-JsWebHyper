@@ -1,73 +1,73 @@
-# Hyperliquid 监控系统配置示例
-# 重命名为 config.yaml 使用
+# Hyperliquid Monitoring System Configuration Example
+# Rename to config.yaml to use
 
-# JS数据监控配置
+# JavaScript Data Monitoring Configuration
 web_js_monitor:
   targets:
-    # 监控交易所页面的价格数据
+    # Monitor price data on exchange page
     - url: "https://app.hyperliquid.xyz/"
       selector: "document.querySelector('.price-container').textContent"
       interval_seconds: 60
       
-    # 监控社区页面的活跃用户数
+    # Monitor active user count on community page
     - url: "https://community.hyperliquid.xyz/"
       selector: "document.querySelector('.stats-container .users-count').textContent"
       interval_seconds: 300
 
-# 静态网页监控配置
+# Static Webpage Monitoring Configuration
 static_page_monitor:
   targets:
-    # 监控官方博客公告
+    # Monitor official blog announcements
     - url: "https://hyperliquid.xyz/blog"
       selector: "#recent-posts"
       interval_seconds: 3600
       
-    # 监控API文档更新
+    # Monitor API documentation updates
     - url: "https://hyperliquid.xyz/docs/api"
       selector: "main"
       interval_seconds: 7200
 
-# Hyperliquid用户交易监控配置
+# Hyperliquid User Transaction Monitoring Configuration
 hyperliquid_monitor:
-  # 要监控的用户地址列表
+  # List of user addresses to monitor
   addresses:
     - "0xc64cc00b46101bd40aa1c3121195e85c0b0918d8"
     - "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
   
-  # 监控间隔（秒）
+  # Monitoring interval (seconds)
   interval_seconds: 120
   
-  # 是否监控现货交易
+  # Whether to monitor spot trading
   spot_trading: true
   
-  # 是否监控合约交易
+  # Whether to monitor contract trading
   contract_trading: true
 
-# 通知配置
+# Notification Configuration
 notifications:
-  # Server酱推送通知
+  # ServerChan push notification
   server_chan:
     enabled: true
-    # 最小通知间隔（分钟）
+    # Minimum notification interval (minutes)
     interval_minutes: 5
   
-  # 邮件通知
+  # Email notification
   email:
     enabled: false
-    # 邮件主题前缀
-    subject_prefix: "[Hyperliquid监控]"
-    # 最小通知间隔（分钟）
+    # Email subject prefix
+    subject_prefix: "[Hyperliquid Monitor]"
+    # Minimum notification interval (minutes)
     interval_minutes: 30
 
-# 日志配置
+# Logging Configuration
 logging:
-  # 日志级别: error, warn, info, debug, trace
+  # Log level: error, warn, info, debug, trace
   level: "info"
-  # 是否输出到文件
+  # Whether to output to file
   file_output: true
-  # 日志文件路径
+  # Log file path
   file_path: "logs/monitor.log"
-  # 日志文件最大大小（MB）
+  # Maximum log file size (MB)
   max_size_mb: 10
-  # 保留的日志文件数量
+  # Number of log files to retain
   max_files: 5 

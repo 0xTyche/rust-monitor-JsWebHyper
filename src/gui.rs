@@ -1,6 +1,5 @@
 use eframe::{egui, Frame, CreationContext};
 use egui::{Color32, RichText, Ui, Vec2};
-use serde::Deserialize;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::runtime::Runtime;
@@ -314,10 +313,10 @@ impl MonitorApp {
         let (tx, mut rx) = mpsc::channel::<Message>(32);
         let tx_clone = tx.clone();
         
-        // 记录任务名称以供后续使用
+        // Record task name for later use
         let task_name = task_config.name.clone();
         
-        // Create task
+        // Create monitoring task
         let handle = self.runtime.spawn(async move {
             match task_config.task_type.as_str() {
                 "JavaScript" => {
@@ -347,7 +346,7 @@ impl MonitorApp {
         
         self.task_handles[task_index] = Some(handle);
         
-        // Add log - 使用前面保存的task_name而不是移动后的task_config
+        // Add log - Using the previously saved task_name instead of the moved task_config
         self.add_log(&format!("Started task #{}: {}", task_index + 1, task_name), Color32::GREEN);
         
         // Create message receiving task
@@ -564,10 +563,32 @@ impl MonitorApp {
         ui.heading("Logs");
         ui.add_space(5.0);
         
+        // Create a combined log text for copying
+        let log_text = self.logs.iter()
+            .map(|(log, _color)| log.clone())
+            .collect::<Vec<String>>()
+            .join("\n");
+            
         egui::ScrollArea::vertical()
             .max_height(200.0)
             .stick_to_bottom(true)
             .show(ui, |ui| {
+                // Display selectable plain text area for copying
+                ui.collapsing("Logs as Plain Text (for copying)", |ui| {
+                    // Add a code block with the log text - this is selectable by default
+                    ui.add_sized(
+                        [ui.available_width(), 150.0],
+                        egui::Label::new(egui::RichText::new(&log_text).monospace())
+                    );
+                    ui.label("(Click and drag to select text, then Copy with Ctrl+C)");
+                });
+                
+                ui.add_space(5.0);
+                
+                // Display the colored logs
+                ui.label("Logs with Colored Formatting:");
+                ui.add_space(5.0);
+                
                 for (log, color) in &self.logs {
                     ui.label(RichText::new(log).color(*color));
                 }
@@ -779,7 +800,7 @@ impl MonitorApp {
         ui.add_space(15.0);
         ui.horizontal(|ui| {
             ui.add_sized([label_width, 24.0], egui::Label::new("Interval (sec):"));
-            ui.add_sized([input_width, 24.0], egui::Slider::new(&mut self.editing_task.interval_secs, 5..=3600)
+            ui.add_sized([input_width, 24.0], egui::Slider::new(&mut self.editing_task.interval_secs, 1..=3600)
                 .clamp_to_range(true)
                 .suffix(" sec"));
         });
@@ -797,7 +818,7 @@ impl MonitorApp {
             if is_edit_mode {
                 if ui.add_sized(btn_size, egui::Button::new("Update")).clicked() {
                     // Update task
-                    if let Some(idx) = self.editing_task_index {
+                    if let Some(_idx) = self.editing_task_index {
                         self.update_task();
                     }
                 }

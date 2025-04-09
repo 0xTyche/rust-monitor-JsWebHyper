@@ -221,6 +221,7 @@ impl HyperliquidMonitor {
     }
 }
 
+#[async_trait::async_trait]
 impl Monitor for HyperliquidMonitor {
     async fn check(&mut self) -> Result<Option<Change>> {
         // Check spot transactions

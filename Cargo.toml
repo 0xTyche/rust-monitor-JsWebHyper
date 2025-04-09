@@ -5,11 +5,11 @@ edition = "2021"
 authors = ["Tyche <yueguangburanshifei@gmail.com>"]
 description = "A tool for monitoring website data changes and Hyperliquid user transactions"
 
-# 参考信息
+# Reference information
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# 基础依赖
+# Basic dependencies
 tokio = { version = "1.29.1", features = ["full"] }
 serde = { version = "1.0.175", features = ["derive"] }
 serde_json = "1.0.103"
@@ -21,14 +21,16 @@ thiserror = "1.0.44"
 dotenv = "0.15.0"
 clap = { version = "4.3.19", features = ["derive"] }
 anyhow = "1.0.72"
+jsonpath_lib = "0.3.0"
+async-trait = "0.1.68"
 
-# HTML和JS解析
+# HTML and JS parsing
 scraper = "0.16.0"
 html5ever = "0.26.0"
 headless_chrome = "=0.9.0"
 regex = "1.9.1"
 
-# Hyperliquid SDK相关
+# Hyperliquid SDK related
 ethers = { version = "2.0.14", features = ["eip712", "abigen"] }
 hex = "0.4.3"
 tokio-tungstenite = { version = "0.19.0", features = ["native-tls"] }
@@ -36,13 +38,13 @@ tokio-tungstenite = { version = "0.19.0", features = ["native-tls"] }
 # Windows API dependencies
 winapi = { version = "0.3.9", features = ["winuser", "combaseapi", "objbase", "shellapi"] }
 
-# GUI界面
+# GUI interface
 eframe = { version = "0.22.0", default-features = false, features = ["default_fonts", "glow", "persistence"] }
 egui = "0.22.0"
 egui_extras = "0.22.0"
 serde_urlencoded = "0.7.1"
 
-# 通知服务
+# Notification services
 lettre = { version = "0.10.4", features = ["tokio1", "tokio1-native-tls", "smtp-transport"], optional = true }
 
 [features]

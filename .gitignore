@@ -1,30 +1,30 @@
-# 编译输出
+# Compilation output
 /target/
 **/*.rs.bk
 
-# 配置文件
+# Configuration files
 .env
 config.yaml
 
-# 日志文件
+# Log files
 /logs/
 
-# 缓存文件
+# Cache files
 .cache/
 *.db
 
-# 操作系统文件
+# OS files
 .DS_Store
 Thumbs.db
 
-# IDE文件
+# IDE files
 .idea/
 .vscode/
 *.iml
 *.swp
 *.swo
 
-# 临时文件
+# Temporary files
 *.tmp
 *.temp
 *.bak 

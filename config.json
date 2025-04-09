@@ -1,7 +1,19 @@
 {
   "notification": {
     "enabled": false,
-    "server_chan_key": ""
+    "server_chan_key": "SCT267319T1JU2krXcV93959svLByRvRWm"
   },
-  "tasks": []
+  "tasks": [
+    {
+      "name": "test js",
+      "task_type": "JavaScript",
+      "url": "https://example.com",
+      "selector": "https://pump.science/api/databaseTokensApi",
+      "address": "",
+      "monitor_spot": true,
+      "monitor_contract": false,
+      "interval_secs": 5,
+      "enabled": true
+    }
+  ]
 }

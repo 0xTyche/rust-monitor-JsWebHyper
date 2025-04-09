@@ -80,6 +80,7 @@ impl StaticMonitor {
     }
 }
 
+#[async_trait::async_trait]
 impl Monitor for StaticMonitor {
     async fn check(&mut self) -> Result<Option<Change>> {
         match self.get_content().await {
