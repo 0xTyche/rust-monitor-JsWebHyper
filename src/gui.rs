@@ -456,7 +456,7 @@ impl MonitorApp {
     }
     
     /// Delete task
-    fn delete_task(&mut self, task_index: usize) {
+    fn delete_task(&mut self, task_index: usize) -> bool {
         if task_index < self.configs.tasks.len() {
             // If task is running, stop it first
             self.stop_task(task_index);
@@ -473,7 +473,10 @@ impl MonitorApp {
             if let Err(e) = self.save_config() {
                 self.add_log(&format!("Failed to save configuration: {}", e), Color32::RED);
             }
+            
+            return true;
         }
+        false
     }
     
     /// Update notification settings
@@ -872,10 +875,20 @@ impl MonitorApp {
     
     /// Draw task list
     fn draw_task_list(&mut self, ui: &mut Ui) {
-        let task_count = self.configs.tasks.len();
+        // Clone tasks to avoid borrow checker issues
+        let tasks = self.configs.tasks.clone();
+        let task_count = tasks.len();
+        
+        // 记录要删除的任务索引
+        let mut delete_index: Option<usize> = None;
         
         for i in 0..task_count {
-            let mut task_clone = self.configs.tasks[i].clone();
+            // 确保索引仍然有效
+            if i >= self.configs.tasks.len() {
+                break;
+            }
+            
+            let task_clone = self.configs.tasks[i].clone();
             let status = self.task_statuses[i].clone();
             
             // Task card style
@@ -948,15 +961,19 @@ impl MonitorApp {
                         
                         ui.add_space(5.0);
                         
+                        // 不直接删除，而是记录要删除的索引
                         if ui.button("Delete").clicked() {
-                            self.delete_task(i);
-                            // Stop the loop after deletion to avoid index out of bounds errors
-                            return;
+                            delete_index = Some(i);
                         }
                     });
                 });
             
             ui.add_space(8.0); // Space between cards
+        }
+        
+        // 在渲染循环之后执行删除操作
+        if let Some(index) = delete_index {
+            self.delete_task(index);
         }
     }
 }
