@@ -1,0 +1,304 @@
+[
+    {
+      "id": "ee6f75e2-a6a3-4802-8f90-3e42efcacb08",
+      "mint": "FvgqHMfL9yn39V79huDPy3YUNDoYJpuLWng2JfmQpump",
+      "status": "secondary",
+      "ticker": "URO",
+      "intervention": "Urolithin A",
+      "compound_image_uri": "https://npcnnhpqtqjqlgwqqoic.supabase.co/storage/v1/object/public/wormbot_v2/compound_videos/gif/Urolithin%20A.gif",
+      "description": "Urolithin A is a compound that your body makes when you eat foods rich in ellagitannins, like pomegranates. What makes it special is its ability to give your cells a “spring cleaning.” It helps clear out old, dysfunctional mitochondria—the energy factories of the cell—allowing the fresh, healthy ones to thrive. This process, known as mitophagy, has been shown to extend the lifespan of C. elegans by making their cells more efficient and energetic. In human studies, Urolithin A has shown promise in boosting muscle health and energy, which tend to decline as we age. Think of it as a reset button for your cells, helping to keep them functioning at their best. While we’re still uncovering its full potential, Urolithin A is a fascinating link between diet, gut health, and longevity.",
+      "hidden": false,
+      "timestampz": "2024-09-21T10:06:00.191924+00:00",
+      "intervention2": null,
+      "smiles_1": "C1=CC2=C(C=C1O)C(=O)OC3=C2C=CC(=C3)O",
+      "smiles_2": null,
+      "cluster": "mainnet-beta",
+      "learn_more_link": null,
+      "learn_more_link2": null,
+      "agreementURL": "https://aquamarine-past-ladybug-185.mypinata.cloud/ipfs/QmTNBtyDxqYcpdese3fSFEyj6xbmZrN5Q3b28ZirU89vmV",
+      "twitter": null,
+      "telegram": null,
+      "meteora_snipe_amount": null,
+      "token_creator": "JBaYBfH8A54Sx1TiuU5191FV8aPMcqCsxFjR4xYko1qQ",
+      "meteora_pool": null,
+      "phase_status": {
+        "status": {
+          "non_toxic": false,
+          "contract_signed": false,
+          "funding_achieved": false
+        },
+        "phaseId": 3,
+        "phaseData": {
+          "0": {
+            "tTest": null,
+            "feeCollected": 0,
+            "fisherExactTest": null
+          },
+          "1": {
+            "tTest": null,
+            "feeCollected": 0,
+            "fisherExactTest": null
+          },
+          "2": {
+            "tTest": null,
+            "feeCollected": 0,
+            "fisherExactTest": {
+              "pValue": 1,
+              "oddsRatio": null
+            }
+          },
+          "3": {
+            "tTest": {
+              "pValue": 0.0357852008654718,
+              "tStats": -2.58350777794171
+            },
+            "feeCollected": 0,
+            "fisherExactTest": null
+          }
+        }
+      },
+      "agreementURLCRO": {
+        "miceURL": "https://npcnnhpqtqjqlgwqqoic.supabase.co/storage/v1/object/public/contract_CRO/production/FvgqHMfL9yn39V79huDPy3YUNDoYJpuLWng2JfmQpump/mice/contract.pdf",
+        "fliesURL": "https://npcnnhpqtqjqlgwqqoic.supabase.co/storage/v1/object/public/contract_CRO/production/FvgqHMfL9yn39V79huDPy3YUNDoYJpuLWng2JfmQpump/flies/contract.pdf",
+        "wormsURL": "https://npcnnhpqtqjqlgwqqoic.supabase.co/storage/v1/object/public/contract_CRO/production/FvgqHMfL9yn39V79huDPy3YUNDoYJpuLWng2JfmQpump/worms/contract.pdf",
+        "humansURL": ""
+      },
+      "airdrop_id": "53nrXbpJzcZWGadov81andTCbb6tWgU132mXyRnpQht6"
+    },
+    {
+      "id": "180648d2-427a-4acd-b8e1-0de9aebf7ce7",
+      "mint": "8GAx9C6nhjdrUg2hHjmmcTFEKVM9A9L5pjw8xBMdrug",
+      "status": "secondary",
+      "ticker": "GOSSY",
+      "intervention": "Gossypol",
+      "compound_image_uri": "https://npcnnhpqtqjqlgwqqoic.supabase.co/storage/v1/object/public/tokenURL/uploads/GOSSY-1740256822934-grab_orig.gif",
+      "description": "A DeSci token inspired by the synergy of Gossypol & (+)-Catechin Hydrate, two powerful bio-compounds with deep biochemical and therapeutic significance. Pioneering decentralized research, funding scientific discovery, and taking innovation on-chain. From the lab to the chain.",
+      "hidden": false,
+      "timestampz": "2025-02-22T20:40:39.02689+00:00",
+      "intervention2": "(+)- Catechin hydrate",
+      "smiles_1": "CC1=CC2=C(C(=C(C(=C2C(C)C)O)O)C=O)C(=C1C3=C(C4=C(C=C3C)C(=C(C(=C4C=O)O)O)C(C)C)O)O",
+      "smiles_2": "O[C@H]1CC2=C(O)C=C(O)C=C2O[C@@H]1C3=CC=C(O)C(O)=C3.O",
+      "cluster": "mainnet-beta",
+      "learn_more_link": "https://www.apexbt.com/signaling-pathways/apoptosis/bcl-2-family/gossypol.html",
+      "learn_more_link2": "https://www.apexbt.com/nature-products/catechin-hydrate.html",
+      "agreementURL": "aquamarine-past-ladybug-185.mypinata.cloud/ipfs/bafkreihhyudsdkcbx2adfn7x2r3q6xt3pc43hfdwddazwz6k2zmnaiktwq",
+      "twitter": "https://x.com/GosCateXyz",
+      "telegram": null,
+      "meteora_snipe_amount": null,
+      "token_creator": "G2LX2iaeA38i6pWx17hXWZHaUkWw69vjze9yfe7aucWi",
+      "meteora_pool": "9ABbNWo6VZaNHRGXpNFNGCb9Kinfcz1E665uwQ8k23fK",
+      "phase_status": {
+        "status": {
+          "non_toxic": true,
+          "contract_signed": false,
+          "funding_achieved": false
+        },
+        "phaseId": 2,
+        "phaseData": {
+          "0": {
+            "tTest": null,
+            "feeCollected": 0,
+            "fisherExactTest": null
+          },
+          "1": {
+            "tTest": null,
+            "feeCollected": 13079.2854304919,
+            "fisherExactTest": {
+              "pValue": 1,
+              "oddsRatio": null
+            }
+          },
+          "2": {
+            "tTest": null,
+            "feeCollected": 10393.4352928964,
+            "fisherExactTest": {
+              "pValue": 1,
+              "oddsRatio": 0
+            }
+          }
+        }
+      },
+      "agreementURLCRO": {
+        "miceURL": "",
+        "fliesURL": "https://npcnnhpqtqjqlgwqqoic.supabase.co/storage/v1/object/public/contract_CRO/production/8GAx9C6nhjdrUg2hHjmmcTFEKVM9A9L5pjw8xBMdrug/flies/contract.pdf",
+        "wormsURL": "",
+        "humansURL": ""
+      },
+      "airdrop_id": "J6Y3AwtCtcC7nobD7rXXujTaQHsE2oZqak4j3oW3BRFt"
+    },
+    {
+      "id": "1549d750-29e9-4d26-8edc-78732e40f521",
+      "mint": "5B9rz8LXB9mcVsv84NFSeNVbP3wULXNr22xxHqndrug",
+      "status": "secondary",
+      "ticker": "EGS",
+      "intervention": "Epigallocatechin gallate",
+      "compound_image_uri": "https://npcnnhpqtqjqlgwqqoic.supabase.co/storage/v1/object/public/tokenURL/uploads/EGS-1739902860928-logo_gif.gif",
+      "description": "Epigallocatechin gallate (EGCG) from green tea and sulforaphane (SFN) from cruciferous vegetables are powerful natural compounds known for their potential to promote longevity properties.",
+      "hidden": false,
+      "timestampz": "2025-02-18T18:21:24.899131+00:00",
+      "intervention2": "Sulforaphane",
+      "smiles_1": "C1[C@H]([C@H](OC2=CC(=CC(=C21)O)O)C3=CC(=C(C(=C3)O)O)O)OC(=O)C4=CC(=C(C(=C4)O)O)O",
+      "smiles_2": "CS(=O)CCCCN=C=S",
+      "cluster": "mainnet-beta",
+      "learn_more_link": "https://www.sigmaaldrich.com/US/en/substance/epigallocatechingallate45837989515",
+      "learn_more_link2": "https://www.sigmaaldrich.com/US/en/product/sigma/s4441",
+      "agreementURL": "aquamarine-past-ladybug-185.mypinata.cloud/ipfs/bafkreicyfcnnzgr56d5iibowcs6ujw4anmomzyyvkwccqdi2wm42x3zsoi",
+      "twitter": "https://x.com/EGCGxSFN",
+      "telegram": "https://t.me/egspump/",
+      "meteora_snipe_amount": 105000000000,
+      "token_creator": "D7v3cBTVXPQpya4X8ouzzPXJ77PdgiVX4F6HHPgcEJHZ",
+      "meteora_pool": "9Hn4JXoKvCL6vJMVHVsifRto4aKvfvA6wiYCnWHhGerY",
+      "phase_status": {
+        "status": {
+          "non_toxic": true,
+          "contract_signed": false,
+          "funding_achieved": false
+        },
+        "phaseId": 1,
+        "phaseData": {
+          "0": {
+            "tTest": null,
+            "feeCollected": 0,
+            "fisherExactTest": null
+          },
+          "1": {
+            "tTest": null,
+            "feeCollected": 1245.35494162748,
+            "fisherExactTest": {
+              "pValue": 1,
+              "oddsRatio": null
+            }
+          }
+        }
+      },
+      "agreementURLCRO": {
+        "miceURL": "",
+        "fliesURL": "",
+        "wormsURL": "",
+        "humansURL": ""
+      },
+      "airdrop_id": "CV7Yd2Tp2JrhvSfXjBzQED1UWV3Vd1Fuo3N4wLhjbadZ"
+    },
+    {
+      "id": "a6f209fd-3318-4b23-97fa-05dbcaea84cf",
+      "mint": "56dS3NpxdCD5f8Nn8zzUFsZRLvhTe9wxNxucUpedrug",
+      "status": "secondary",
+      "ticker": "ART",
+      "intervention": "Artemisinin",
+      "compound_image_uri": "https://npcnnhpqtqjqlgwqqoic.supabase.co/storage/v1/object/public/tokenURL/uploads/$ART-1739902760208-artemisinin_4x.gif",
+      "description": "Kicking of the next wave of DeSci with some real $ART.",
+      "hidden": false,
+      "timestampz": "2025-02-18T18:19:43.662841+00:00",
+      "intervention2": null,
+      "smiles_1": "C[C@@H]1CC[C@H]2[C@H](C(=O)O[C@H]3[C@@]24[C@H]1CC[C@](O3)(OO4)C)C",
+      "smiles_2": null,
+      "cluster": "mainnet-beta",
+      "learn_more_link": "https://www.apexbt.com/nature-products/dihydroartemisinin.html",
+      "learn_more_link2": null,
+      "agreementURL": "aquamarine-past-ladybug-185.mypinata.cloud/ipfs/bafkreiedqovqyvwk23q5gth4rkk6aexkzykagtqjczxhbdx3fj74zq7mka",
+      "twitter": "https://x.com/Artemisinin69",
+      "telegram": "https://t.me/artemisinin_portal",
+      "meteora_snipe_amount": 193010000000,
+      "token_creator": "2ASqrYFmNtQJ4PRjfNtTiNiqP6guXpCd6N62omZAobgN",
+      "meteora_pool": "6kewgxw5mcoDqf5144LLMabqhMrfzLVnMaC8Np74r1du",
+      "phase_status": {
+        "status": {
+          "non_toxic": true,
+          "contract_signed": true,
+          "funding_achieved": false
+        },
+        "phaseId": 1,
+        "phaseData": {
+          "0": {
+            "tTest": null,
+            "feeCollected": 0,
+            "fisherExactTest": null
+          },
+          "1": {
+            "tTest": null,
+            "feeCollected": 1976.217272652,
+            "fisherExactTest": {
+              "pValue": 1,
+              "oddsRatio": null
+            }
+          }
+        }
+      },
+      "agreementURLCRO": {
+        "miceURL": "",
+        "fliesURL": "https://npcnnhpqtqjqlgwqqoic.supabase.co/storage/v1/object/public/contract_CRO/production/56dS3NpxdCD5f8Nn8zzUFsZRLvhTe9wxNxucUpedrug/flies/contract.pdf",
+        "wormsURL": "",
+        "humansURL": ""
+      },
+      "airdrop_id": "5vXxXgryRgRGhK8Csx5J5eX47vKcXYF1FjAbQ1GkdP3R"
+    },
+    {
+      "id": "f9c35e3c-f49d-428b-837d-98e99659ffd4",
+      "mint": "GJtJuWD9qYcCkrwMBmtY1tpapV1sKfB2zUv9Q4aqpump",
+      "status": "secondary",
+      "ticker": "RIF",
+      "intervention": "Rifampicin",
+      "compound_image_uri": "https://npcnnhpqtqjqlgwqqoic.supabase.co/storage/v1/object/public/wormbot_v2/compound_videos/gif/Rifampicin.gif",
+      "description": "Rifampicin is traditionally known as an antibiotic, but it’s been gaining attention for its surprising effects on aging. In tiny organisms like C. elegans (a model organism often used in aging research), Rifampicin has been shown to activate the cell’s natural defense mechanisms against stress and damage. Imagine it as a sort of \"cellular coach,\" encouraging cells to stay healthy and resilient by protecting against harmful oxidative stress and maintaining the quality of proteins within the cell. These protective effects help the worms live longer and healthier lives. While it’s still early days, and we don’t yet know if Rifampicin can do the same in humans, its ability to promote cellular health makes it an exciting area of research in the quest for anti-aging therapies​.",
+      "hidden": false,
+      "timestampz": "2024-09-21T10:06:00.191924+00:00",
+      "intervention2": null,
+      "smiles_1": "C[C@H]1/C=C/C=C(\\C(=O)NC2=C(C(=C3C(=C2O)C(=C(C4=C3C(=O)[C@](O4)(O/C=C/[C@@H]([C@H]([C@H]([C@@H]([C@@H]([C@@H]([C@H]1O)C)O)C)OC(=O)C)C)OC)C)C)O)O)/C=N/N5CCN(CC5)C)/C",
+      "smiles_2": null,
+      "cluster": "mainnet-beta",
+      "learn_more_link": null,
+      "learn_more_link2": null,
+      "agreementURL": "https://aquamarine-past-ladybug-185.mypinata.cloud/ipfs/QmcP3pPZnseE2XLbS6nRbXaTmGT96gsZYc1pua2C664zfK",
+      "twitter": null,
+      "telegram": null,
+      "meteora_snipe_amount": null,
+      "token_creator": "JBaYBfH8A54Sx1TiuU5191FV8aPMcqCsxFjR4xYko1qQ",
+      "meteora_pool": null,
+      "phase_status": {
+        "status": {
+          "non_toxic": false,
+          "contract_signed": false,
+          "funding_achieved": false
+        },
+        "phaseId": 3,
+        "phaseData": {
+          "0": {
+            "tTest": null,
+            "feeCollected": 0,
+            "fisherExactTest": null
+          },
+          "1": {
+            "tTest": null,
+            "feeCollected": 0,
+            "fisherExactTest": {
+              "pValue": 1,
+              "oddsRatio": null
+            }
+          },
+          "2": {
+            "tTest": null,
+            "feeCollected": 0,
+            "fisherExactTest": {
+              "pValue": 1,
+              "oddsRatio": null
+            }
+          },
+          "3": {
+            "tTest": {
+              "pValue": 0.0462703670907136,
+              "tStats": -2.32970241497924
+            },
+            "feeCollected": 0,
+            "fisherExactTest": null
+          }
+        }
+      },
+      "agreementURLCRO": {
+        "miceURL": "https://npcnnhpqtqjqlgwqqoic.supabase.co/storage/v1/object/public/contract_CRO/production/GJtJuWD9qYcCkrwMBmtY1tpapV1sKfB2zUv9Q4aqpump/mice/contract.pdf",
+        "fliesURL": "https://npcnnhpqtqjqlgwqqoic.supabase.co/storage/v1/object/public/contract_CRO/production/GJtJuWD9qYcCkrwMBmtY1tpapV1sKfB2zUv9Q4aqpump/flies/contract.pdf",
+        "wormsURL": "https://npcnnhpqtqjqlgwqqoic.supabase.co/storage/v1/object/public/contract_CRO/production/GJtJuWD9qYcCkrwMBmtY1tpapV1sKfB2zUv9Q4aqpump/worms/contract.pdf",
+        "humansURL": ""
+      },
+      "airdrop_id": "53nrXbpJzcZWGadov81andTCbb6tWgU132mXyRnpQht6"
+    }
+  ]

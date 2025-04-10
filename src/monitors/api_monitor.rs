@@ -95,9 +95,27 @@ impl Monitor for ApiMonitor {
                 // First check
                 if let Some(new_value) = result {
                     debug!("First check, recording initial value: {}", new_value);
+                    
+                    // Create change object with initial value
+                    let change = Change {
+                        message: format!("Initial API data from {}", self.url),
+                        details: format!("Initial value: {}", new_value),
+                    };
+                    
+                    // Set the last value
                     self.last_value = Some(new_value);
+                    
+                    // Return the change to send initial notification
+                    Ok(Some(change))
+                } else {
+                    // Could not extract initial data
+                    debug!("Could not extract initial data using selector: {}", self.selector);
+                    self.last_value = None;
+                    Ok(Some(Change {
+                        message: format!("Could not extract initial data from API response"),
+                        details: format!("URL: {}\nSelector: {}", self.url, self.selector),
+                    }))
                 }
-                Ok(None)
             }
             Some(old_value) => {
                 if let Some(new_value) = result {

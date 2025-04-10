@@ -83,9 +83,19 @@ impl Monitor for StaticMonitor {
                         return Ok(Some(change));
                     }
                 } else {
-                    // First check, don't trigger change notification
+                    // First check, create change notification with initial content
                     debug!("First time getting content: {} bytes", current_content.len());
+                    
+                    // Create change for initial content
+                    let change = Change {
+                        message: format!("Initial webpage content: {}", self.url),
+                        details: format!("Initial content length: {} bytes", current_content.len()),
+                    };
+                    
+                    // Store the content
                     self.last_content = Some(current_content);
+                    
+                    return Ok(Some(change));
                 }
                 
                 Ok(None)

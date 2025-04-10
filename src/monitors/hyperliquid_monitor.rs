@@ -152,9 +152,29 @@ impl HyperliquidMonitor {
                 return Ok(Some(change));
             }
         } else {
-            // First check, no change notification
+            // First check, send initial notification
             debug!("First time getting spot transaction records");
+            
+            // Extract transaction details
+            let asset = latest_trade["asset"].as_str().unwrap_or("Unknown");
+            let side = if latest_trade["side"].as_str().unwrap_or("") == "B" { "Buy" } else { "Sell" };
+            let price = latest_trade["px"].as_str().unwrap_or("0");
+            let size = latest_trade["sz"].as_str().unwrap_or("0");
+            let time = latest_trade["time"].as_u64().unwrap_or(0);
+            
+            // Build initial notification
+            let change = Change {
+                message: format!("Initial spot transaction data for {}", self.address),
+                details: format!(
+                    "User: {}\nLatest Transaction:\nAsset: {}\nDirection: {}\nPrice: {}\nSize: {}\nTime: {}\nTransaction ID: {}",
+                    self.address, asset, side, price, size, time, trade_id
+                ),
+            };
+            
+            // Update last transaction ID
             self.last_spot_trade_id = Some(trade_id);
+            
+            return Ok(Some(change));
         }
         
         Ok(None)
@@ -212,9 +232,31 @@ impl HyperliquidMonitor {
                 return Ok(Some(change));
             }
         } else {
-            // First check, no change notification
+            // First check, send initial notification
             debug!("First time getting contract transaction records");
+            
+            // Extract transaction details
+            let asset = latest_trade["coin"].as_str().unwrap_or("Unknown");
+            let side = if latest_trade["side"].as_str().unwrap_or("") == "B" { "Buy" } else { "Sell" };
+            let price = latest_trade["px"].as_str().unwrap_or("0");
+            let size = latest_trade["sz"].as_str().unwrap_or("0");
+            let time = latest_trade["time"].as_u64().unwrap_or(0);
+            
+            // Build initial notification
+            let change = Change {
+                message: format!("Initial contract transaction data for {}", self.address),
+                details: format!(
+                    "User: {}\nLatest Transaction:\nAsset: {}\nDirection: {}\nPrice: {}\nSize: {}\nTime: {}\nTransaction ID: {}",
+                    self.address, asset, 
+                    if side == "Buy" { "Buy" } else { "Sell" }, 
+                    price, size, time, trade_id
+                ),
+            };
+            
+            // Update last transaction ID
             self.last_contract_trade_id = Some(trade_id);
+            
+            return Ok(Some(change));
         }
         
         Ok(None)
