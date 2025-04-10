@@ -137,12 +137,23 @@ impl HyperliquidMonitor {
                 let size = latest_trade["sz"].as_str().unwrap_or("0");
                 let time = latest_trade["time"].as_u64().unwrap_or(0);
                 
+                // 格式化交易时间
+                let formatted_time = format_timestamp(time);
+                
+                // 创建变化描述
+                let change_description = format!(
+                    "新的{}{}: 资产:{}，价格:{}，数量:{}，时间:{}",
+                    asset, side, asset, price, size, formatted_time
+                );
+                
                 // Build change notification
                 let change = Change {
                     message: format!("Detected new spot transaction: {} {}", asset, side),
                     details: format!(
-                        "User: {}\nAsset: {}\nDirection: {}\nPrice: {}\nSize: {}\nTime: {}\nTransaction ID: {}",
-                        self.address, asset, side, price, size, time, trade_id
+                        "变化的内容：\n{}\n\n当前的交易：\n用户: {}\n资产: {}\n方向: {}\n价格: {}\n数量: {}\n时间: {}\n交易ID: {}\n\n之前的交易ID：\n{}",
+                        change_description,
+                        self.address, asset, side, price, size, formatted_time, trade_id,
+                        last_id
                     ),
                 };
                 
@@ -162,12 +173,15 @@ impl HyperliquidMonitor {
             let size = latest_trade["sz"].as_str().unwrap_or("0");
             let time = latest_trade["time"].as_u64().unwrap_or(0);
             
+            // 格式化交易时间
+            let formatted_time = format_timestamp(time);
+            
             // Build initial notification
             let change = Change {
                 message: format!("Initial spot transaction data for {}", self.address),
                 details: format!(
-                    "User: {}\nLatest Transaction:\nAsset: {}\nDirection: {}\nPrice: {}\nSize: {}\nTime: {}\nTransaction ID: {}",
-                    self.address, asset, side, price, size, time, trade_id
+                    "首次监控数据：\n用户: {}\n最新交易:\n资产: {}\n方向: {}\n价格: {}\n数量: {}\n时间: {}\n交易ID: {}",
+                    self.address, asset, side, price, size, formatted_time, trade_id
                 ),
             };
             
@@ -215,14 +229,25 @@ impl HyperliquidMonitor {
                 let size = latest_trade["sz"].as_str().unwrap_or("0");
                 let time = latest_trade["time"].as_u64().unwrap_or(0);
                 
+                // 格式化交易时间
+                let formatted_time = format_timestamp(time);
+                
+                // 创建变化描述
+                let change_description = format!(
+                    "新的合约{}{}: 资产:{}，价格:{}，数量:{}，时间:{}",
+                    asset, if side == "Buy" { "买入" } else { "卖出" }, asset, price, size, formatted_time
+                );
+                
                 // Build change notification
                 let change = Change {
                     message: format!("Detected new contract transaction: {} {}", asset, side),
                     details: format!(
-                        "User: {}\nAsset: {}\nDirection: {}\nPrice: {}\nSize: {}\nTime: {}\nTransaction ID: {}",
+                        "变化的内容：\n{}\n\n当前的交易：\n用户: {}\n资产: {}\n方向: {}\n价格: {}\n数量: {}\n时间: {}\n交易ID: {}\n\n之前的交易ID：\n{}",
+                        change_description,
                         self.address, asset, 
                         if side == "Buy" { "Buy" } else { "Sell" }, 
-                        price, size, time, trade_id
+                        price, size, formatted_time, trade_id,
+                        last_id
                     ),
                 };
                 
@@ -242,14 +267,17 @@ impl HyperliquidMonitor {
             let size = latest_trade["sz"].as_str().unwrap_or("0");
             let time = latest_trade["time"].as_u64().unwrap_or(0);
             
+            // 格式化交易时间
+            let formatted_time = format_timestamp(time);
+            
             // Build initial notification
             let change = Change {
                 message: format!("Initial contract transaction data for {}", self.address),
                 details: format!(
-                    "User: {}\nLatest Transaction:\nAsset: {}\nDirection: {}\nPrice: {}\nSize: {}\nTime: {}\nTransaction ID: {}",
+                    "首次监控数据：\n用户: {}\n最新交易:\n资产: {}\n方向: {}\n价格: {}\n数量: {}\n时间: {}\n交易ID: {}",
                     self.address, asset, 
                     if side == "Buy" { "Buy" } else { "Sell" }, 
-                    price, size, time, trade_id
+                    price, size, formatted_time, trade_id
                 ),
             };
             
@@ -260,6 +288,15 @@ impl HyperliquidMonitor {
         }
         
         Ok(None)
+    }
+}
+
+/// 辅助函数：格式化时间戳
+fn format_timestamp(timestamp: u64) -> String {
+    use chrono::{TimeZone, Local};
+    match Local.timestamp_opt(timestamp as i64 / 1000, 0) {
+        chrono::LocalResult::Single(dt) => dt.format("%Y-%m-%d %H:%M:%S").to_string(),
+        _ => format!("{}(无效时间戳)", timestamp),
     }
 }
 

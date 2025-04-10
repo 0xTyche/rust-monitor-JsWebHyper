@@ -57,6 +57,50 @@ impl StaticMonitor {
         
         Ok(html)
     }
+    
+    /// 生成更易读的变化描述
+    fn generate_change_description(&self, old_content: &str, new_content: &str) -> String {
+        // 获取字符串长度的变化
+        let old_len = old_content.len();
+        let new_len = new_content.len();
+        
+        let mut changes = String::new();
+        
+        // 检查内容长度变化
+        if new_len > old_len {
+            changes.push_str(&format!("内容增加: {} -> {} 字节 (增加 {} 字节)\n", 
+                old_len, new_len, new_len - old_len));
+        } else if new_len < old_len {
+            changes.push_str(&format!("内容减少: {} -> {} 字节 (减少 {} 字节)\n", 
+                old_len, new_len, old_len - new_len));
+        } else {
+            changes.push_str("内容长度相同，但内容已变化\n");
+        }
+        
+        // 尝试检测一些常见的HTML变化
+        if old_content.contains("<title>") && new_content.contains("<title>") {
+            // 提取标题
+            let old_title = extract_between(old_content, "<title>", "</title>").unwrap_or("未找到");
+            let new_title = extract_between(new_content, "<title>", "</title>").unwrap_or("未找到");
+            
+            if old_title != new_title {
+                changes.push_str(&format!("标题变化: '{}' -> '{}'\n", old_title, new_title));
+            }
+        }
+        
+        changes
+    }
+}
+
+/// 辅助函数：提取两个标记之间的内容
+fn extract_between<'a>(content: &'a str, start_marker: &str, end_marker: &str) -> Option<&'a str> {
+    if let Some(start_idx) = content.find(start_marker) {
+        let content_after_start = &content[start_idx + start_marker.len()..];
+        if let Some(end_idx) = content_after_start.find(end_marker) {
+            return Some(&content_after_start[..end_idx]);
+        }
+    }
+    None
 }
 
 #[async_trait::async_trait]
@@ -68,12 +112,16 @@ impl Monitor for StaticMonitor {
                 if let Some(last_content) = &self.last_content {
                     if *last_content != current_content {
                         // Content has changed
+                        // 创建更易读的变化描述
+                        let change_description = self.generate_change_description(last_content, &current_content);
+                        
                         let change = Change {
                             message: format!("Webpage content changed: {}", self.url),
                             details: format!(
-                                "Content length: {} -> {} bytes", 
-                                last_content.len(), 
-                                current_content.len()
+                                "变化的内容：\n{}\n\n当前的内容长度：{} 字节\n\n之前的内容长度：{} 字节", 
+                                change_description,
+                                current_content.len(), 
+                                last_content.len()
                             ),
                         };
                         
@@ -89,7 +137,7 @@ impl Monitor for StaticMonitor {
                     // Create change for initial content
                     let change = Change {
                         message: format!("Initial webpage content: {}", self.url),
-                        details: format!("Initial content length: {} bytes", current_content.len()),
+                        details: format!("初始内容长度: {} 字节", current_content.len()),
                     };
                     
                     // Store the content

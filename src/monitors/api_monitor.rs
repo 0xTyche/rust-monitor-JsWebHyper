@@ -29,6 +29,47 @@ impl ApiMonitor {
             interval_secs,
         }
     }
+
+    /// 生成更易读的变化描述
+    fn generate_change_description(&self, old_value: &str, new_value: &str) -> String {
+        if old_value.len() > 100 || new_value.len() > 100 {
+            // 对于长字符串，尝试检测具体的变化部分
+            if old_value.contains(',') && new_value.contains(',') {
+                // 可能是逗号分隔的列表，比较每个元素
+                let old_items: Vec<&str> = old_value.split(',').map(|s| s.trim()).collect();
+                let new_items: Vec<&str> = new_value.split(',').map(|s| s.trim()).collect();
+                
+                // 找出添加的项
+                let added: Vec<&str> = new_items.iter()
+                    .filter(|item| !old_items.contains(item))
+                    .copied()
+                    .collect();
+                
+                // 找出移除的项
+                let removed: Vec<&str> = old_items.iter()
+                    .filter(|item| !new_items.contains(item))
+                    .copied()
+                    .collect();
+                
+                let mut changes = String::new();
+                
+                if !added.is_empty() {
+                    changes.push_str(&format!("新增: {}\n", added.join(", ")));
+                }
+                
+                if !removed.is_empty() {
+                    changes.push_str(&format!("移除: {}\n", removed.join(", ")));
+                }
+                
+                if !changes.is_empty() {
+                    return changes;
+                }
+            }
+        }
+        
+        // 对于无法精确描述变化的情况，返回简单的说明
+        "数据已更新".to_string()
+    }
 }
 
 #[async_trait::async_trait]
@@ -140,11 +181,14 @@ impl Monitor for ApiMonitor {
                         debug!("Old value: {}", old_value);
                         debug!("New value: {}", new_value);
                         
+                        // 创建更易读的变化描述
+                        let change_description = self.generate_change_description(old_value, &new_value);
+                        
                         // Create change object with old_value (already borrowed)
                         let change = Change {
                             message: format!("API data changed at {}", self.url),
-                            details: format!("JSONPath: {}\nOld value: {}\nNew value: {}\n\nNote: If your JSONPath selector matches multiple elements, this represents the combined changes.", 
-                                selector, old_value, &new_value),
+                            details: format!("JSONPath: {}\n\n变化的内容：\n{}\n\n当前的内容：\n{}\n\n之前的内容：\n{}\n\nNote: If your JSONPath selector matches multiple elements, this represents the combined changes.", 
+                                selector, change_description, &new_value, old_value),
                         };
                         
                         // Now update the last_value after we've used old_value
