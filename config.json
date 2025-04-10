@@ -6,13 +6,13 @@
   "tasks": [
     {
       "name": "New Task",
-      "task_type": "API Monitor",
-      "url": "https://pump.science/api/databaseTokensApi",
-      "selector": "$[*].mint",
-      "address": "",
-      "monitor_spot": true,
-      "monitor_contract": false,
-      "interval_secs": 2,
+      "task_type": "Hyperliquid",
+      "url": "https://example.com",
+      "selector": "",
+      "address": "0x45d26f28196d226497130c4bac709d808fed4029",
+      "monitor_spot": false,
+      "monitor_contract": true,
+      "interval_secs": 1,
       "enabled": true
     }
   ]

@@ -2,7 +2,8 @@ use anyhow::{Result, anyhow};
 use log::{debug, info};
 use std::str::FromStr;
 use ethers::types::H160;
-use serde_json::Value;
+use serde_json::{Value, json};
+use reqwest::header;
 
 use crate::monitors::{Monitor, Change};
 
@@ -28,24 +29,24 @@ pub struct HyperliquidMonitor {
     notes: String,
 }
 
-/// 持仓信息结构
+/// Position information structure
 #[derive(Debug, Clone)]
 struct PositionInfo {
-    /// 资产名称
+    /// Asset name
     asset: String,
-    /// 杠杆倍数
+    /// Leverage multiplier
     leverage: f64,
-    /// 持仓类型（多/空）
+    /// Position type (long/short)
     position_type: String,
-    /// 入场价格
+    /// Entry price
     entry_price: f64,
-    /// 标记价格
+    /// Mark price
     mark_price: f64,
-    /// 持仓大小
+    /// Position size
     size: f64,
-    /// 仓位价值
+    /// Position value
     position_value: f64,
-    /// 收益百分比
+    /// Profit/Loss percentage
     pnl_percentage: f64,
 }
 
@@ -61,7 +62,7 @@ impl HyperliquidMonitor {
             last_contract_trade_id: None,
             last_positions_hash: None,
             client: reqwest::Client::new(),
-            notes: address.to_string(), // 默认使用地址作为备注
+            notes: address.to_string(), // Default to using address as the note
         }
     }
     
@@ -91,14 +92,19 @@ impl HyperliquidMonitor {
     async fn get_contract_positions(&self) -> Result<Vec<PositionInfo>> {
         debug!("Getting user contract positions: {}", self.address);
         
-        // Build API request URL for user info
-        let url = format!(
-            "https://api.hyperliquid.xyz/info/positions?user={}",
-            self.address
-        );
+        // API endpoint
+        let url = "https://api.hyperliquid.xyz/info";
         
-        // Send request
-        let response = self.client.get(&url)
+        // Create request body
+        let data = json!({
+            "type": "clearinghouseState",
+            "user": self.address
+        });
+        
+        // Send POST request
+        let response = self.client.post(url)
+            .header(header::CONTENT_TYPE, "application/json")
+            .json(&data)
             .send()
             .await
             .map_err(|e| anyhow!("API request failed: {}", e))?;
@@ -109,14 +115,17 @@ impl HyperliquidMonitor {
         }
         
         // Parse response
-        let data: Value = response.json()
+        let json: Value = response.json()
             .await
             .map_err(|e| anyhow!("Parsing response failed: {}", e))?;
             
-        // Parse positions from response
-        let positions = parse_positions(&data)?;
-        
-        Ok(positions)
+        // Extract positions from assetPositions field
+        if let Some(positions) = json.get("assetPositions") {
+            let pos = parse_positions(positions)?;
+            Ok(pos)
+        } else {
+            Ok(vec![]) // Return empty Vec if no positions found
+        }
     }
     
     /// Calculate hash of positions to detect changes
@@ -140,14 +149,19 @@ impl HyperliquidMonitor {
     async fn get_spot_trades(&self) -> Result<Value> {
         debug!("Getting user spot transaction history: {}", self.address);
         
-        // Build API request URL
-        let url = format!(
-            "https://api.hyperliquid.xyz/info/spotUserFills?user={}",
-            self.address
-        );
+        // API endpoint
+        let url = "https://api.hyperliquid.xyz/info";
         
-        // Send request
-        let response = self.client.get(&url)
+        // Create request body
+        let data = json!({
+            "type": "userFills",
+            "user": self.address
+        });
+        
+        // Send POST request
+        let response = self.client.post(url)
+            .header(header::CONTENT_TYPE, "application/json")
+            .json(&data)
             .send()
             .await
             .map_err(|e| anyhow!("API request failed: {}", e))?;
@@ -169,14 +183,19 @@ impl HyperliquidMonitor {
     async fn get_contract_trades(&self) -> Result<Value> {
         debug!("Getting user contract transaction history: {}", self.address);
         
-        // Build API request URL
-        let url = format!(
-            "https://api.hyperliquid.xyz/info/userFills?user={}",
-            self.address
-        );
+        // API endpoint
+        let url = "https://api.hyperliquid.xyz/info";
         
-        // Send request
-        let response = self.client.get(&url)
+        // Create request body
+        let data = json!({
+            "type": "userFills",
+            "user": self.address
+        });
+        
+        // Send POST request
+        let response = self.client.post(url)
+            .header(header::CONTENT_TYPE, "application/json")
+            .json(&data)
             .send()
             .await
             .map_err(|e| anyhow!("API request failed: {}", e))?;
@@ -229,12 +248,12 @@ impl HyperliquidMonitor {
                 let size = latest_trade["sz"].as_str().unwrap_or("0");
                 let time = latest_trade["time"].as_u64().unwrap_or(0);
                 
-                // 格式化交易时间
+                // Format transaction time
                 let formatted_time = format_timestamp(time);
                 
-                // 创建变化描述
+                // Create change description
                 let change_description = format!(
-                    "新的{}{}: 资产:{}，价格:{}，数量:{}，时间:{}",
+                    "New {} {}: Asset:{}, Price:{}, Size:{}, Time:{}",
                     asset, side, asset, price, size, formatted_time
                 );
                 
@@ -242,8 +261,7 @@ impl HyperliquidMonitor {
                 let change = Change {
                     message: format!("Detected new spot transaction: {} {}", asset, side),
                     details: format!(
-                        "变化的内容：\n{}\n\n当前的交易：\n用户: {}\n资产: {}\n方向: {}\n价格: {}\n数量: {}\n时间: {}\n交易ID: {}\n\n之前的交易ID：\n{}",
-                        change_description,
+                        "Changed content:\nUser: {}\nAsset: {}\nSide: {}\nPrice: {}\nSize: {}\nTime: {}\nTransaction ID: {}\n\nPrevious transaction ID: {}",
                         self.address, asset, side, price, size, formatted_time, trade_id,
                         last_id
                     ),
@@ -265,14 +283,14 @@ impl HyperliquidMonitor {
             let size = latest_trade["sz"].as_str().unwrap_or("0");
             let time = latest_trade["time"].as_u64().unwrap_or(0);
             
-            // 格式化交易时间
+            // Format transaction time
             let formatted_time = format_timestamp(time);
             
             // Build initial notification
             let change = Change {
                 message: format!("Initial spot transaction data for {}", self.address),
                 details: format!(
-                    "首次监控数据：\n用户: {}\n最新交易:\n资产: {}\n方向: {}\n价格: {}\n数量: {}\n时间: {}\n交易ID: {}",
+                    "Initial monitoring data:\nUser: {}\nLatest transaction:\nAsset: {}\nSide: {}\nPrice: {}\nSize: {}\nTime: {}\nTransaction ID: {}",
                     self.address, asset, side, price, size, formatted_time, trade_id
                 ),
             };
@@ -295,20 +313,20 @@ impl HyperliquidMonitor {
         // Get current positions
         let positions = self.get_contract_positions().await?;
         
-        // Calculate hash of current positions (空持仓也需要计算hash值)
+        // Calculate hash of current positions (hash value needs to be calculated even for empty positions)
         let positions_hash = self.calculate_positions_hash(&positions);
         
         // No positions
         if positions.is_empty() {
             debug!("No contract positions found for user: {}", self.address);
             
-            // 首次检查或持仓变更为空都需要发送通知
+            // Send notification for first check or when positions change to empty
             if self.last_positions_hash.is_some() {
-                // 之前有持仓现在没有了 - 平仓通知
+                // Previously had positions but now none - Position closed notification
                 let change = Change {
-                    message: format!("close：{}", self.notes),
+                    message: format!("close: {}", self.notes),
                     details: format!(
-                        "用户: {}\n\n当前没有活跃持仓\n\n查看更多信息：@https://hyperdash.info/trader/{}",
+                        "User: {}\n\nNo active positions currently\n\nView more information: @https://hyperdash.info/trader/{}",
                         self.address, self.address
                     ),
                 };
@@ -318,16 +336,16 @@ impl HyperliquidMonitor {
                 
                 return Ok(Some(change));
             } else {
-                // 首次检查且无持仓 - 发送初始空持仓通知
+                // First check with no positions - Send initial empty positions notification
                 let change = Change {
-                    message: format!("start：{}", self.notes),
+                    message: format!("start: {}", self.notes),
                     details: format!(
-                        "开始监控用户: {}\n\n当前没有活跃持仓\n\n查看更多信息：@https://hyperdash.info/trader/{}",
+                        "Started monitoring user: {}\n\nNo active positions currently\n\nView more information: @https://hyperdash.info/trader/{}",
                         self.address, self.address
                     ),
                 };
                 
-                // 记录空持仓的hash
+                // Record empty positions hash
                 self.last_positions_hash = Some(positions_hash);
                 
                 return Ok(Some(change));
@@ -355,7 +373,7 @@ impl HyperliquidMonitor {
                 // Format all positions for details
                 for pos in &positions {
                     position_details.push_str(&format!(
-                        "资产: {}\n杠杆: {:.0}x\n类型: {}\n入场价格: {:.2}\n标记价格: {:.2}\n仓位大小: {:.4}\n仓位价值: ${:.2}\nPNL: {:.2}%\n\n",
+                        "Asset: {}\nLeverage: {:.0}x\nType: {}\nEntry price: {:.2}\nMark price: {:.2}\nPosition size: {:.4}\nPosition value: ${:.2}\nPNL: {:.2}%\n\n",
                         pos.asset, pos.leverage, pos.position_type, 
                         pos.entry_price, pos.mark_price, pos.size, 
                         pos.position_value, pos.pnl_percentage
@@ -366,7 +384,7 @@ impl HyperliquidMonitor {
                 let change = Change {
                     message: format!("{} {}", self.notes, title_parts.join(" | ")),
                     details: format!(
-                        "用户持仓变更:\n\n{}\n查看更多信息：@https://hyperdash.info/trader/{}",
+                        "User position changes:\n\n{}\nView more information: @https://hyperdash.info/trader/{}",
                         position_details.trim(), self.address
                     ),
                 };
@@ -386,25 +404,25 @@ impl HyperliquidMonitor {
             
             // Format all positions for details
             for pos in &positions {
-                // 为标题准备第一个持仓的信息
+                // Prepare first position info for title
                 if position_info_for_title.is_empty() {
                     position_info_for_title = format!("Asset:{} Lever:{:.0}x Type:{} Entry price:{:.2}",
                         pos.asset, pos.leverage, pos.position_type, pos.entry_price);
                 }
                 
                 position_details.push_str(&format!(
-                    "资产: {}\n杠杆: {:.0}x\n类型: {}\n入场价格: {:.2}\n标记价格: {:.2}\n仓位大小: {:.4}\n仓位价值: ${:.2}\nPNL: {:.2}%\n\n",
+                    "Asset: {}\nLeverage: {:.0}x\nType: {}\nEntry price: {:.2}\nMark price: {:.2}\nPosition size: {:.4}\nPosition value: ${:.2}\nPNL: {:.2}%\n\n",
                     pos.asset, pos.leverage, pos.position_type, 
                     pos.entry_price, pos.mark_price, pos.size, 
                     pos.position_value, pos.pnl_percentage
                 ));
             }
             
-            // Build change notification - 首次通知使用"start：备注"格式
+            // Build change notification - Use "start: notes" format for initial notification
             let change = Change {
-                message: format!("start：{}", self.notes),
+                message: format!("start: {}", self.notes),
                 details: format!(
-                    "用户当前持仓：\n\n{}\n查看更多信息：@https://hyperdash.info/trader/{}",
+                    "User's current positions:\n\n{}\nView more information: @https://hyperdash.info/trader/{}",
                     position_details.trim(), self.address
                 ),
             };
@@ -418,9 +436,9 @@ impl HyperliquidMonitor {
         Ok(None)
     }
     
-    /// Check user contract transaction changes (已保留旧代码作为备份)
+    /// Check user contract transaction changes (old code kept as backup)
     async fn check_contract_trades(&mut self) -> Result<Option<Change>> {
-        // 优先检查持仓变化
+        // Check position changes first
         if let Some(change) = self.check_contract_positions().await? {
             return Ok(Some(change));
         }
@@ -429,7 +447,7 @@ impl HyperliquidMonitor {
             return Ok(None);
         }
         
-        // 原有代码 - 检查交易历史变化
+        // Original code - Check transaction history changes
         let trades = self.get_contract_trades().await?;
         
         // Check if there are transaction records
@@ -455,13 +473,13 @@ impl HyperliquidMonitor {
                 // Update last transaction ID
                 self.last_contract_trade_id = Some(trade_id);
                 
-                // 已由持仓监控替代，仅更新ID但不发送通知
+                // Replaced by position monitoring, only update ID without sending notification
                 return Ok(None);
             }
         } else {
             // First check, just record the ID
             self.last_contract_trade_id = Some(trade_id);
-            // 已由持仓监控替代，仅记录ID但不发送通知
+            // Replaced by position monitoring, only record ID without sending notification
             return Ok(None);
         }
         
@@ -469,31 +487,31 @@ impl HyperliquidMonitor {
     }
 }
 
-/// 辅助函数：解析持仓数据
+/// Helper function: Parse position data
 fn parse_positions(data: &Value) -> Result<Vec<PositionInfo>> {
     let mut positions = Vec::new();
     
-    // 尝试解析JSON响应中的持仓数据
+    // Try to parse position data from JSON response
     if let Some(positions_array) = data.as_array() {
         for pos in positions_array {
             if let (Some(coin), Some(position)) = (pos.get("coin"), pos.get("position")) {
                 
-                // 解析基本数据
+                // Parse basic data
                 let asset = coin.as_str().unwrap_or("Unknown").to_string();
                 
-                // 解析持仓方向和大小
+                // Parse position direction and size
                 let szi = position["szi"].as_str().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
                 let position_type = if szi > 0.0 { "long".to_string() } else { "short".to_string() };
                 let size = szi.abs();
                 
-                // 解析入场价格和标记价格
+                // Parse entry price and mark price
                 let entry_price = position["entryPx"].as_str().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
                 let mark_price = pos["markPx"].as_str().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
                 
-                // 解析杠杆
+                // Parse leverage
                 let leverage = pos["leverage"].as_str().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
                 
-                // 计算仓位价值和收益率
+                // Calculate position value and profit/loss percentage
                 let position_value = size * mark_price;
                 let entry_value = size * entry_price;
                 let pnl = if position_type == "long" {
@@ -524,12 +542,12 @@ fn parse_positions(data: &Value) -> Result<Vec<PositionInfo>> {
     Ok(positions)
 }
 
-/// 辅助函数：格式化时间戳
+/// Helper function: Format timestamp
 fn format_timestamp(timestamp: u64) -> String {
     use chrono::{TimeZone, Local};
     match Local.timestamp_opt(timestamp as i64 / 1000, 0) {
         chrono::LocalResult::Single(dt) => dt.format("%Y-%m-%d %H:%M:%S").to_string(),
-        _ => format!("{}(无效时间戳)", timestamp),
+        _ => format!("{}(Invalid timestamp)", timestamp),
     }
 }
 
