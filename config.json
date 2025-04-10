@@ -7,12 +7,34 @@
     {
       "name": "New Task",
       "task_type": "Static Web",
-      "url": "https://pump.science/api/databaseTokensApi",
+      "url": "https://x.com/yueguangQAQ",
       "selector": "",
-      "address": "0x...",
+      "address": "",
       "monitor_spot": true,
       "monitor_contract": false,
-      "interval_secs": 1,
+      "interval_secs": 5,
+      "enabled": true
+    },
+    {
+      "name": "New Task",
+      "task_type": "Static Web",
+      "url": "https://example.com",
+      "selector": "",
+      "address": "",
+      "monitor_spot": true,
+      "monitor_contract": false,
+      "interval_secs": 60,
+      "enabled": true
+    },
+    {
+      "name": "New Task",
+      "task_type": "Static Web",
+      "url": "https://example.com",
+      "selector": "",
+      "address": "",
+      "monitor_spot": true,
+      "monitor_contract": false,
+      "interval_secs": 60,
       "enabled": true
     }
   ]

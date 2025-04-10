@@ -19,7 +19,6 @@ mod notifiers;
 mod utils;
 
 use monitors::{
-    js_monitor::JsMonitor,
     static_monitor::StaticMonitor,
     hyperliquid_monitor::HyperliquidMonitor,
     api_monitor::ApiMonitor,
@@ -52,7 +51,6 @@ impl fmt::Display for TaskStatus {
 /// Monitoring task type
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TaskType {
-    Js,
     Static,
     Hyperliquid,
     Api,
@@ -61,7 +59,6 @@ pub enum TaskType {
 impl fmt::Display for TaskType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TaskType::Js => write!(f, "JavaScript"),
             TaskType::Static => write!(f, "Static Web"),
             TaskType::Hyperliquid => write!(f, "Hyperliquid"),
             TaskType::Api => write!(f, "API Monitor"),
@@ -72,7 +69,6 @@ impl fmt::Display for TaskType {
 impl TaskType {
     fn from_str(s: &str) -> Option<Self> {
         match s {
-            "JavaScript" => Some(TaskType::Js),
             "Static Web" => Some(TaskType::Static),
             "Hyperliquid" => Some(TaskType::Hyperliquid),
             "API Monitor" => Some(TaskType::Api),
@@ -90,7 +86,7 @@ pub struct TaskConfig {
     pub task_type: String,
     /// Target URL to monitor
     pub url: String,
-    /// Selector (for JS and static web page monitoring)
+    /// Selector (for static web page monitoring and API)
     pub selector: String,
     /// Wallet address (for Hyperliquid monitoring)
     pub address: String,
@@ -108,9 +104,9 @@ impl Default for TaskConfig {
     fn default() -> Self {
         Self {
             name: "New Task".to_string(),
-            task_type: "JavaScript".to_string(),
+            task_type: "Static Web".to_string(),
             url: "https://example.com".to_string(),
-            selector: "document.querySelector('div').textContent".to_string(),
+            selector: "".to_string(),
             address: "".to_string(),
             monitor_spot: true,
             monitor_contract: false,
@@ -270,6 +266,7 @@ impl MonitorApp {
         if config_file.exists() {
             let config_str = fs::read_to_string(config_file)?;
             let config: Configs = serde_json::from_str(&config_str)?;
+            
             Ok(config)
         } else {
             Err(anyhow::anyhow!("Configuration file does not exist"))
@@ -307,7 +304,8 @@ impl MonitorApp {
             self.task_handles[task_index] = None;
         }
         
-        let task_config = self.configs.tasks[task_index].clone();
+        let mut task_config = self.configs.tasks[task_index].clone();
+        
         self.task_statuses[task_index] = TaskStatus::Running;
         
         // Create notification service
@@ -323,10 +321,6 @@ impl MonitorApp {
         // Create monitoring task
         let handle = self.runtime.spawn(async move {
             match task_config.task_type.as_str() {
-                "JavaScript" => {
-                    let mut monitor = JsMonitor::new(&task_config.url, &task_config.selector, task_config.interval_secs);
-                    run_monitor_task(task_index, &mut monitor, notifier, tx).await;
-                },
                 "Static Web" => {
                     let mut monitor = StaticMonitor::new(&task_config.url, &task_config.selector, task_config.interval_secs);
                     run_monitor_task(task_index, &mut monitor, notifier, tx).await;
@@ -556,15 +550,28 @@ impl MonitorApp {
         ui.separator();
         ui.add_space(10.0);
         
+        // Calculate available height for panels and adjust
+        let available_height = ui.available_height();
+        let task_list_height = available_height * 0.5; // 50% of available height
+        let logs_height = available_height * 0.4; // 40% of available height
+        
         // Task list
         ui.heading("Task List");
-        ui.add_space(10.0);
+        ui.add_space(5.0);
         
         let task_count = self.configs.tasks.len();
         if task_count == 0 {
             ui.label("No tasks yet. Click 'Add Task' button to add monitoring tasks");
         } else {
-            self.draw_task_list(ui);
+            // Task list scroll area with fixed height
+            egui::ScrollArea::vertical()
+                .id_source("task_list_scroll_area")
+                .min_scrolled_height(200.0)
+                .max_height(task_list_height)
+                .auto_shrink([false; 2])
+                .show(ui, |ui| {
+                    self.draw_task_list(ui);
+                });
         }
         
         ui.add_space(10.0);
@@ -580,10 +587,14 @@ impl MonitorApp {
             .map(|(log, _color)| log.clone())
             .collect::<Vec<String>>()
             .join("\n");
-            
+        
+        // Logs scroll area with fixed height    
         egui::ScrollArea::vertical()
-            .max_height(200.0)
+            .id_source("logs_scroll_area")
+            .min_scrolled_height(150.0)
+            .max_height(logs_height)
             .stick_to_bottom(true)
+            .auto_shrink([false; 2])
             .show(ui, |ui| {
                 // Display selectable plain text area for copying
                 ui.collapsing("Logs as Plain Text (for copying)", |ui| {
@@ -652,13 +663,6 @@ impl MonitorApp {
         // Set window title
         let is_edit_mode = self.editing_task_index.is_some();
         match self.editing_task.task_type.as_str() {
-            "JavaScript" => {
-                if is_edit_mode {
-                    ui.heading("Edit JS Monitor");
-                } else {
-                    ui.heading("Add JS Monitor");
-                }
-            },
             "Static Web" => {
                 if is_edit_mode {
                     ui.heading("Edit Web Monitor");
@@ -687,16 +691,10 @@ impl MonitorApp {
         // Monitor type selection
         ui.label("Monitor Type:");
         ui.horizontal(|ui| {
-            if ui.radio_value(&mut self.editing_task.task_type, "JavaScript".to_string(), "JavaScript").clicked() {
-                // Reset relevant fields when switching to JS monitor type
-                if !is_edit_mode {
-                    self.editing_task.selector = "document.querySelector('div').textContent".to_string();
-                }
-            }
             if ui.radio_value(&mut self.editing_task.task_type, "Static Web".to_string(), "Static Web").clicked() {
                 // Reset relevant fields when switching to Web monitor type
                 if !is_edit_mode {
-                    self.editing_task.selector = "#price-container .value".to_string();
+                    self.editing_task.selector = "".to_string();
                 }
             }
             if ui.radio_value(&mut self.editing_task.task_type, "API Monitor".to_string(), "API Monitor").clicked() {
@@ -717,57 +715,12 @@ impl MonitorApp {
         
         // Display different form fields based on task type
         match self.editing_task.task_type.as_str() {
-            "JavaScript" => {
-                // JS monitor form
-                ui.horizontal(|ui| {
-                    ui.add_sized([label_width, 24.0], egui::Label::new("Website URL:"));
-                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.url)
-                        .hint_text("https://example.com")
-                        .margin(egui::vec2(8.0, 4.0)));
-                });
-                
-                ui.add_space(10.0);
-                
-                ui.horizontal(|ui| {
-                    ui.add_sized([label_width, 24.0], egui::Label::new("JS Selector:"));
-                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.selector)
-                        .hint_text("document.querySelector('div').textContent")
-                        .margin(egui::vec2(8.0, 4.0)));
-                });
-                
-                ui.add_space(10.0);
-                
-                ui.horizontal(|ui| {
-                    ui.add_sized([label_width, 24.0], egui::Label::new("ServerChan Key:"));
-                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.configs.notification.server_chan_key)
-                        .hint_text("ServerChan API key")
-                        .margin(egui::vec2(8.0, 4.0)));
-                });
-                
-                ui.add_space(10.0);
-                
-                ui.horizontal(|ui| {
-                    ui.add_sized([label_width, 24.0], egui::Label::new("Notes:"));
-                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.name)
-                        .hint_text("Optional notes")
-                        .margin(egui::vec2(8.0, 4.0)));
-                });
-            },
             "Static Web" => {
                 // Web monitor form
                 ui.horizontal(|ui| {
                     ui.add_sized([label_width, 24.0], egui::Label::new("Website URL:"));
                     ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.url)
                         .hint_text("https://example.com")
-                        .margin(egui::vec2(8.0, 4.0)));
-                });
-                
-                ui.add_space(10.0);
-                
-                ui.horizontal(|ui| {
-                    ui.add_sized([label_width, 24.0], egui::Label::new("CSS Selector:"));
-                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.selector)
-                        .hint_text("#price-container .value")
                         .margin(egui::vec2(8.0, 4.0)));
                 });
                 
@@ -919,97 +872,92 @@ impl MonitorApp {
     
     /// Draw task list
     fn draw_task_list(&mut self, ui: &mut Ui) {
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            let task_count = self.configs.tasks.len();
+        let task_count = self.configs.tasks.len();
+        
+        for i in 0..task_count {
+            let mut task_clone = self.configs.tasks[i].clone();
+            let status = self.task_statuses[i].clone();
             
-            for i in 0..task_count {
-                let task_clone = self.configs.tasks[i].clone();
-                let status = self.task_statuses[i].clone();
-                
-                // Task card style
-                egui::Frame::none()
-                    .fill(ui.visuals().extreme_bg_color)
-                    .inner_margin(egui::style::Margin::symmetric(10.0, 10.0))
-                    .show(ui, |ui| {
-                        // Top row: task name and status
-                        ui.horizontal(|ui| {
-                            let status_text = match &status {
-                                TaskStatus::Running => RichText::new("⚡ Running").color(Color32::GREEN),
-                                TaskStatus::Idle => RichText::new("⏹ Stopped").color(Color32::YELLOW),
-                                TaskStatus::Error => RichText::new("❌ Error").color(Color32::RED),
-                            };
-                            
-                            ui.label(format!("#{}: ", i + 1));
-                            ui.add(egui::Label::new(RichText::new(&task_clone.name).strong().size(16.0)));
-                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                ui.label(status_text);
-                            });
-                        });
+            // Task card style
+            egui::Frame::none()
+                .fill(ui.visuals().extreme_bg_color)
+                .inner_margin(egui::style::Margin::symmetric(10.0, 10.0))
+                .show(ui, |ui| {
+                    // Top row: task name and status
+                    ui.horizontal(|ui| {
+                        let status_text = match &status {
+                            TaskStatus::Running => RichText::new("⚡ Running").color(Color32::GREEN),
+                            TaskStatus::Idle => RichText::new("⏹ Stopped").color(Color32::YELLOW),
+                            TaskStatus::Error => RichText::new("❌ Error").color(Color32::RED),
+                        };
                         
-                        ui.add_space(5.0);
-                        
-                        // Task details
-                        ui.horizontal(|ui| {
-                            match task_clone.task_type.as_str() {
-                                "JavaScript" => {
-                                    ui.label(format!("Type: JS Monitor | URL: {} | Selector: {} | Interval: {}s", 
-                                               task_clone.url, task_clone.selector, task_clone.interval_secs));
-                                },
-                                "Static Web" => {
-                                    ui.label(format!("Type: Static Webpage Monitor | URL: {} | Selector: {} | Interval: {}s", 
-                                               task_clone.url, task_clone.selector, task_clone.interval_secs));
-                                },
-                                "API Monitor" => {
-                                    ui.label(format!("Type: API Monitor | URL: {} | JSONPath: {} | Interval: {}s", 
-                                               task_clone.url, task_clone.selector, task_clone.interval_secs));
-                                },
-                                "Hyperliquid" => {
-                                    ui.label(format!("Type: Hyperliquid Monitor | Address: {} | Spot: {} | Contract: {} | Interval: {}s", 
-                                               task_clone.address, 
-                                               if task_clone.monitor_spot { "Yes" } else { "No" }, 
-                                               if task_clone.monitor_contract { "Yes" } else { "No" }, 
-                                               task_clone.interval_secs));
-                                },
-                                _ => {}
-                            }
-                        });
-                        
-                        ui.add_space(5.0);
-                        
-                        // Operation buttons
-                        ui.horizontal(|ui| {
-                            let is_running = matches!(status, TaskStatus::Running);
-                            
-                            if is_running {
-                                if ui.button("Stop").clicked() {
-                                    self.stop_task(i);
-                                }
-                            } else {
-                                if ui.button("Start").clicked() {
-                                    self.start_task(i);
-                                }
-                            }
-                            
-                            ui.add_space(5.0);
-                            
-                            if ui.button("Edit").clicked() {
-                                self.editing_task = task_clone.clone();
-                                self.editing_task_index = Some(i);
-                                self.show_edit_task_dialog = true;
-                            }
-                            
-                            ui.add_space(5.0);
-                            
-                            if ui.button("Delete").clicked() {
-                                self.delete_task(i);
-                                return;
-                            }
+                        ui.label(format!("#{}: ", i + 1));
+                        ui.add(egui::Label::new(RichText::new(&task_clone.name).strong().size(16.0)));
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(status_text);
                         });
                     });
-                
-                ui.add_space(8.0); // Space between cards
-            }
-        });
+                    
+                    ui.add_space(5.0);
+                    
+                    // Task details
+                    ui.horizontal(|ui| {
+                        match task_clone.task_type.as_str() {
+                            "Static Web" => {
+                                ui.label(format!("Type: Static Web Monitor | URL: {} | Interval: {}s", 
+                                           task_clone.url, task_clone.interval_secs));
+                            },
+                            "API Monitor" => {
+                                ui.label(format!("Type: API Monitor | URL: {} | JSONPath: {} | Interval: {}s", 
+                                           task_clone.url, task_clone.selector, task_clone.interval_secs));
+                            },
+                            "Hyperliquid" => {
+                                ui.label(format!("Type: Hyperliquid Monitor | Address: {} | Spot: {} | Contract: {} | Interval: {}s", 
+                                           task_clone.address, 
+                                           if task_clone.monitor_spot { "Yes" } else { "No" }, 
+                                           if task_clone.monitor_contract { "Yes" } else { "No" }, 
+                                           task_clone.interval_secs));
+                            },
+                            _ => {}
+                        }
+                    });
+                    
+                    ui.add_space(5.0);
+                    
+                    // Operation buttons
+                    ui.horizontal(|ui| {
+                        let is_running = matches!(status, TaskStatus::Running);
+                        
+                        if is_running {
+                            if ui.button("Stop").clicked() {
+                                self.stop_task(i);
+                            }
+                        } else {
+                            if ui.button("Start").clicked() {
+                                self.start_task(i);
+                            }
+                        }
+                        
+                        ui.add_space(5.0);
+                        
+                        if ui.button("Edit").clicked() {
+                            self.editing_task = task_clone.clone();
+                            self.editing_task_index = Some(i);
+                            self.show_edit_task_dialog = true;
+                        }
+                        
+                        ui.add_space(5.0);
+                        
+                        if ui.button("Delete").clicked() {
+                            self.delete_task(i);
+                            // Stop the loop after deletion to avoid index out of bounds errors
+                            return;
+                        }
+                    });
+                });
+            
+            ui.add_space(8.0); // Space between cards
+        }
     }
 }
 

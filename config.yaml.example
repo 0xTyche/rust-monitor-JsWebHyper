@@ -1,19 +1,6 @@
 # Hyperliquid Monitoring System Configuration Example
 # Rename to config.yaml to use
 
-# JavaScript Data Monitoring Configuration
-web_js_monitor:
-  targets:
-    # Monitor price data on exchange page
-    - url: "https://app.hyperliquid.xyz/"
-      selector: "document.querySelector('.price-container').textContent"
-      interval_seconds: 60
-      
-    # Monitor active user count on community page
-    - url: "https://community.hyperliquid.xyz/"
-      selector: "document.querySelector('.stats-container .users-count').textContent"
-      interval_seconds: 300
-
 # Static Webpage Monitoring Configuration
 static_page_monitor:
   targets:
@@ -26,6 +13,19 @@ static_page_monitor:
     - url: "https://hyperliquid.xyz/docs/api"
       selector: "main"
       interval_seconds: 7200
+
+# API Monitoring Configuration
+api_monitor:
+  targets:
+    # Monitor price data from API
+    - url: "https://api.hyperliquid.xyz/info/marketData"
+      selector: "$.data.price"
+      interval_seconds: 60
+      
+    # Monitor active user count API
+    - url: "https://api.hyperliquid.xyz/info/stats"
+      selector: "$.data.users_count"
+      interval_seconds: 300
 
 # Hyperliquid User Transaction Monitoring Configuration
 hyperliquid_monitor:

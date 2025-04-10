@@ -1,7 +1,6 @@
 use anyhow::{Result, anyhow};
 use log::{debug, error};
 use reqwest::Client;
-use scraper::{Html, Selector};
 use std::time::Duration;
 
 use crate::monitors::{Monitor, Change};
@@ -10,8 +9,6 @@ use crate::monitors::{Monitor, Change};
 pub struct StaticMonitor {
     /// Webpage URL to monitor
     url: String,
-    /// HTML selector
-    selector: String,
     /// Monitoring interval (seconds)
     interval_secs: u64,
     /// Last detected content
@@ -22,7 +19,7 @@ pub struct StaticMonitor {
 
 impl StaticMonitor {
     /// Create a new static webpage monitor
-    pub fn new(url: &str, selector: &str, interval_secs: u64) -> Self {
+    pub fn new(url: &str, _selector: &str, interval_secs: u64) -> Self {
         // Create HTTP client with timeout
         let client = Client::builder()
             .timeout(Duration::from_secs(30))
@@ -31,16 +28,15 @@ impl StaticMonitor {
             
         Self {
             url: url.to_string(),
-            selector: selector.to_string(),
             interval_secs,
             last_content: None,
             client,
         }
     }
     
-    /// Get content of specified element from webpage
+    /// Get content of webpage
     async fn get_content(&self) -> Result<String> {
-        debug!("Getting webpage content: {} - {}", self.url, self.selector);
+        debug!("Getting entire webpage content: {}", self.url);
         
         // Send HTTP request to get webpage content
         let response = self.client.get(&self.url)
@@ -57,33 +53,9 @@ impl StaticMonitor {
             .await
             .map_err(|e| anyhow!("Failed to read response content: {}", e))?;
         
-        // If selector is empty or just whitespace, return the entire page content
-        let selector = self.selector.trim();
-        if selector.is_empty() || selector == "*" || selector == "body" {
-            debug!("Using entire page content: {} bytes", html.len());
-            return Ok(html);
-        }
-            
-        // Parse HTML
-        let document = Html::parse_document(&html);
+        debug!("Full webpage content retrieved: {} bytes", html.len());
         
-        // Parse selector
-        let selector = Selector::parse(&self.selector)
-            .map_err(|e| anyhow!("Failed to parse selector: {}", e))?;
-            
-        // Get content of matching elements
-        let content = document.select(&selector)
-            .map(|element| element.inner_html())
-            .collect::<Vec<String>>()
-            .join("\n");
-            
-        if content.is_empty() {
-            return Err(anyhow!("No matching elements found"));
-        }
-        
-        debug!("Content retrieved: {} bytes", content.len());
-        
-        Ok(content)
+        Ok(html)
     }
 }
 
@@ -99,8 +71,7 @@ impl Monitor for StaticMonitor {
                         let change = Change {
                             message: format!("Webpage content changed: {}", self.url),
                             details: format!(
-                                "Selector: {}\nContent length: {} -> {} bytes", 
-                                self.selector, 
+                                "Content length: {} -> {} bytes", 
                                 last_content.len(), 
                                 current_content.len()
                             ),

@@ -9,27 +9,23 @@ A monitoring system developed based on Hyperliquid Rust SDK that can monitor web
    - Support for JSON path selectors to extract specific data fields
    - Customizable detection intervals and automatic change notifications
 
-2. **Website JS Data Monitoring**
-   - Monitor JS data changes on specified websites
-   - Set data change thresholds and detection intervals
-   - Support for custom data extraction rules
-
-3. **Static Webpage Monitoring**
+2. **Static Webpage Monitoring**
    - Monitor static webpage content changes
    - Support for monitoring specific HTML elements
    - Change comparison and difference display
 
-4. **Hyperliquid User Transaction Monitoring**
+3. **Hyperliquid User Transaction Monitoring**
    - Monitor spot trading of specified user addresses
    - Monitor contract trading of specified user addresses
    - Transaction history and statistics
 
-5. **Notification Methods**
+4. **Notification Methods**
    - ServerChan push notifications, supporting WeChat receiving
    - Email notifications (optional)
    - Log file recording
 
-6. **Graphical User Interface**
+5. **Graphical User Interface**
+   - Full English interface for global users
    - Desktop application interface based on egui
    - Visual configuration of monitoring tasks
    - Real-time monitoring status and logs
@@ -40,7 +36,6 @@ The system consists of the following modules:
 
 1. **Data Collectors**:
    - API Data Collector: Gets JSON data from REST API endpoints
-   - WebJS Collector: Gets dynamic JS data from websites
    - Webpage Content Collector: Gets static webpage content
    - Hyperliquid Transaction Collector: Gets user transaction data via API
 
@@ -50,7 +45,7 @@ The system consists of the following modules:
 
 3. **Notification Service**: Sends detected changes to users through different channels
 
-4. **Graphical Interface**: Provides a user-friendly operation interface
+4. **Graphical Interface**: Provides a user-friendly operation interface with full English support
 
 ## Installation and Usage
 
@@ -106,12 +101,6 @@ api_monitor:
       selector: "data.price"
       interval_seconds: 60
       
-web_js_monitor:
-  targets:
-    - url: "https://example.com/data.js"
-      selector: "window.marketData"
-      interval_seconds: 60
-      
 static_page_monitor:
   targets:
     - url: "https://example.com/page.html"
@@ -141,7 +130,7 @@ After starting the GUI application, you can:
 
 1. Add Monitoring Tasks
    - Click the "Add Task" button
-   - Select the task type (API Monitor, JS Monitor, Static Webpage Monitor, or Hyperliquid Monitor)
+   - Select the task type (API Monitor, Static Web Monitor, or Hyperliquid Monitor)
    - Fill in the relevant configuration
    - Click the "Add" button to save
 
@@ -161,10 +150,7 @@ After starting the GUI application, you can:
 
 ```bash
 # Monitor API data
-cargo run -- --monitor js --url "https://api-v2.solscan.io/v2/common/sol-market?tokenAddress=So11111111111111111111111111111111111111112" --selector "data.price"
-
-# Monitor JS data
-cargo run -- --monitor js --url "https://example.com/data.js" --selector "window.marketData.price"
+cargo run -- --monitor api --url "https://api-v2.solscan.io/v2/common/sol-market?tokenAddress=So11111111111111111111111111111111111111112" --selector "data.price"
 
 # Monitor static webpage
 cargo run -- --monitor static --url "https://example.com/announcement.html" --selector "#announcement-content"
@@ -199,6 +185,19 @@ This project uses the notification service provided by ServerChan, which support
 2. Configure the key
    - Set `SERVER_CHAN_KEY` in the `.env` file
    - Or set it in the "Notification Settings" area of the GUI interface
+
+## Recent Updates
+
+- **Version 0.1.2 (2023-04-09)**
+  - Removed JavaScript monitoring functionality
+  - Improved static webpage monitoring
+  - Enhanced API monitoring capabilities
+  - Optimized performance
+
+- **Version 0.1.1 (2023-04-09)**
+  - Full English interface support for global users
+  - Optimized code comments and documentation
+  - Fixed notification formatting issues
 
 ## License
 

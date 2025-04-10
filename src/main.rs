@@ -9,7 +9,6 @@ mod notifiers;
 mod utils;
 
 use monitors::{
-    js_monitor::JsMonitor,
     static_monitor::StaticMonitor,
     hyperliquid_monitor::HyperliquidMonitor,
     Monitor
@@ -32,20 +31,6 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Monitor JS data changes
-    Js {
-        /// Website URL to monitor
-        #[arg(short, long)]
-        url: String,
-
-        /// JS data selector
-        #[arg(short, long)]
-        selector: String,
-
-        /// Monitoring interval (seconds)
-        #[arg(short, long, default_value_t = 60)]
-        interval: u64,
-    },
     /// Monitor static webpage changes
     Static {
         /// Webpage URL to monitor
@@ -78,6 +63,20 @@ enum Commands {
         #[arg(long, default_value_t = true)]
         contract: bool,
     },
+    /// Monitor API data changes
+    Api {
+        /// API URL to monitor
+        #[arg(short, long)]
+        url: String,
+
+        /// JSONPath selector
+        #[arg(short, long)]
+        selector: String,
+
+        /// Monitoring interval (seconds)
+        #[arg(short, long, default_value_t = 60)]
+        interval: u64,
+    },
 }
 
 #[tokio::main]
@@ -96,11 +95,6 @@ async fn main() -> Result<()> {
     
     // Execute the appropriate monitoring task based on command line arguments
     match &cli.command {
-        Some(Commands::Js { url, selector, interval }) => {
-            info!("Starting JS data monitoring: {}", url);
-            let monitor = JsMonitor::new(url, selector, *interval);
-            run_monitor(monitor).await?;
-        }
         Some(Commands::Static { url, selector, interval }) => {
             info!("Starting static webpage monitoring: {}", url);
             let monitor = StaticMonitor::new(url, selector, *interval);
@@ -109,6 +103,11 @@ async fn main() -> Result<()> {
         Some(Commands::Hyperliquid { address, interval, spot, contract }) => {
             info!("Starting Hyperliquid user transaction monitoring: {}", address);
             let monitor = HyperliquidMonitor::new(address, *interval, *spot, *contract);
+            run_monitor(monitor).await?;
+        }
+        Some(Commands::Api { url, selector, interval }) => {
+            info!("Starting API data monitoring: {}", url);
+            let monitor = monitors::api_monitor::ApiMonitor::new(url.clone(), selector.clone(), *interval);
             run_monitor(monitor).await?;
         }
         None => {

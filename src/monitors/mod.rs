@@ -1,5 +1,4 @@
 pub mod api_monitor;
-pub mod js_monitor;
 pub mod static_monitor;
 pub mod hyperliquid_monitor;
 
