@@ -60,8 +60,12 @@ impl Monitor for ApiMonitor {
             }));
         }
         
-        let json: Value = match response.json().await {
-            Ok(json) => json,
+        let json: Value = match response.json::<Value>().await {
+            Ok(json) => {
+                // 添加调试日志，输出完整的JSON响应
+                debug!("Received JSON response: {}", json.to_string());
+                json
+            },
             Err(e) => {
                 debug!("Failed to parse JSON response: {}", e);
                 return Ok(Some(Change {
@@ -75,10 +79,19 @@ impl Monitor for ApiMonitor {
         let selector = self.selector.trim();
         let result = match jsonpath::select(&json, selector) {
             Ok(results) if !results.is_empty() => {
-                let result_str = results[0].to_string();
-                // Remove quotes from JSON string (if any)
-                let clean_result = result_str.trim_matches('"').to_string();
-                Some(clean_result)
+                // 处理多个结果，不仅仅是第一个
+                let result_str = if results.len() == 1 {
+                    // 单个结果的处理方式
+                    results[0].to_string().trim_matches('"').to_string()
+                } else {
+                    // 多个结果的处理方式 - 将所有结果合并成一个JSON数组字符串
+                    let values: Vec<String> = results.iter()
+                        .map(|r| r.to_string().trim_matches('"').to_string())
+                        .collect();
+                    format!("[{}]", values.join(", "))
+                };
+                
+                Some(result_str)
             },
             Ok(_) => {
                 debug!("JSONPath selector returned no results");
@@ -99,7 +112,8 @@ impl Monitor for ApiMonitor {
                     // Create change object with initial value
                     let change = Change {
                         message: format!("Initial API data from {}", self.url),
-                        details: format!("Initial value: {}", new_value),
+                        details: format!("JSONPath: {}\nInitial value: {}\n\nNote: This may represent multiple values if your JSONPath selector matches multiple elements.", 
+                            selector, new_value),
                     };
                     
                     // Set the last value
@@ -113,7 +127,8 @@ impl Monitor for ApiMonitor {
                     self.last_value = None;
                     Ok(Some(Change {
                         message: format!("Could not extract initial data from API response"),
-                        details: format!("URL: {}\nSelector: {}", self.url, self.selector),
+                        details: format!("URL: {}\nSelector: {}\n\nThe JSONPath selector did not match any data. Please check if your selector is correct.", 
+                            self.url, self.selector),
                     }))
                 }
             }
@@ -128,7 +143,8 @@ impl Monitor for ApiMonitor {
                         // Create change object with old_value (already borrowed)
                         let change = Change {
                             message: format!("API data changed at {}", self.url),
-                            details: format!("Old value: {}\nNew value: {}", old_value, &new_value),
+                            details: format!("JSONPath: {}\nOld value: {}\nNew value: {}\n\nNote: If your JSONPath selector matches multiple elements, this represents the combined changes.", 
+                                selector, old_value, &new_value),
                         };
                         
                         // Now update the last_value after we've used old_value
@@ -147,7 +163,8 @@ impl Monitor for ApiMonitor {
                     debug!("Could not extract data using selector: {}", self.selector);
                     Ok(Some(Change {
                         message: format!("Could not extract data from API response"),
-                        details: format!("URL: {}\nSelector: {}", self.url, self.selector),
+                        details: format!("URL: {}\nSelector: {}\n\nThe JSONPath selector did not match any data after a previous successful match. The data structure may have changed.", 
+                            self.url, self.selector),
                     }))
                 }
             }
