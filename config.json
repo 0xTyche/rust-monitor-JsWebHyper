@@ -1,7 +1,9 @@
 {
   "notification": {
-    "enabled": true,
-    "server_chan_key": "SCT271420TLvlS0MVZewxEaI9Bft5yA9mj"
+    "enabled": false,
+    "server_chan_keys": [
+      "SCT267319T1JU2krXcV93959svLByRvRWm"
+    ]
   },
   "tasks": [
     {
@@ -9,24 +11,60 @@
       "task_type": "Hyperliquid",
       "url": "https://example.com",
       "selector": "",
-      "address": "0x2ba553d9f990a3b66b03b2dc0d030dfc1c061036",
+      "address": "0xe4d31c2541A9cE596419879B1A46Ffc7cD202c62",
       "monitor_spot": false,
       "monitor_contract": true,
       "interval_secs": 60,
       "enabled": true,
-      "notes": "无敌"
+      "notes": "\t\n24 小时内获利 683 万美元"
     },
     {
       "name": "New Task",
       "task_type": "Hyperliquid",
       "url": "https://example.com",
       "selector": "",
-      "address": "0x2ba553d9f990a3b66b03b2dc0d030dfc1c061036",
+      "address": "0xe4d31c2541A9cE596419879B1A46Ffc7cD202c62",
       "monitor_spot": false,
       "monitor_contract": true,
-      "interval_secs": 1,
+      "interval_secs": 60,
       "enabled": true,
-      "notes": "测试hyeper监控"
+      "notes": "美股开盘前操作"
+    },
+    {
+      "name": "New Task",
+      "task_type": "Hyperliquid",
+      "url": "https://example.com",
+      "selector": "",
+      "address": "0xf3F496C9486BE5924a93D67e98298733Bb47057c",
+      "monitor_spot": false,
+      "monitor_contract": true,
+      "interval_secs": 60,
+      "enabled": true,
+      "notes": "极限两分钟看多 ETH 获利 5000 美元"
+    },
+    {
+      "name": "New Task",
+      "task_type": "Hyperliquid",
+      "url": "https://example.com",
+      "selector": "",
+      "address": "0xf3F496C9486BE5924a93D67e98298733Bb47057c",
+      "monitor_spot": false,
+      "monitor_contract": true,
+      "interval_secs": 60,
+      "enabled": true,
+      "notes": "持续 4 天的 $BTC 40x 空单以盈利 510.1 万美元收尾"
+    },
+    {
+      "name": "New Task",
+      "task_type": "Hyperliquid",
+      "url": "https://example.com",
+      "selector": "",
+      "address": "0xf3F496C9486BE5924a93D67e98298733Bb47057c",
+      "monitor_spot": false,
+      "monitor_contract": true,
+      "interval_secs": 60,
+      "enabled": true,
+      "notes": "\t\n配合美联储消息开启「做空 - 做多 - 做空」的多次转换，共获利 115 万美元"
     }
   ]
 }

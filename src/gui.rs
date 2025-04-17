@@ -124,15 +124,15 @@ impl Default for TaskConfig {
 pub struct NotificationConfig {
     /// Whether to enable ServerChan notifications
     pub enabled: bool,
-    /// ServerChan key
-    pub server_chan_key: String,
+    /// ServerChan keys
+    pub server_chan_keys: Vec<String>,
 }
 
 impl Default for NotificationConfig {
     fn default() -> Self {
         Self {
             enabled: false,
-            server_chan_key: String::new(),
+            server_chan_keys: vec![String::new()],
         }
     }
 }
@@ -225,12 +225,12 @@ impl MonitorApp {
         }
         
         // Initialize notification service
-        let notifier = if !config.notification.server_chan_key.is_empty() {
-            Some(Arc::new(ServerChanNotifier::new(&config.notification.server_chan_key)))
+        let notifier = if !config.notification.server_chan_keys.is_empty() {
+            Some(Arc::new(ServerChanNotifier::new_with_keys(&config.notification.server_chan_keys)))
         } else {
             // Try to load ServerChan key from environment variables
             match std::env::var("SERVER_CHAN_KEY") {
-                Ok(key) if !key.is_empty() => Some(Arc::new(ServerChanNotifier::new(&key))),
+                Ok(key) if !key.is_empty() => Some(Arc::new(ServerChanNotifier::new_with_keys(&vec![key]))),
                 _ => None,
             }
         };
@@ -490,13 +490,26 @@ impl MonitorApp {
     
     /// Update notification settings
     fn update_notification_config(&mut self) {
-        // Update notification service
-        if self.configs.notification.enabled && !self.configs.notification.server_chan_key.is_empty() {
-            self.notifier = Some(Arc::new(ServerChanNotifier::new(&self.configs.notification.server_chan_key)));
-            self.add_log("Updated ServerChan notification configuration", Color32::LIGHT_BLUE);
+        if self.configs.notification.enabled {
+            // Filter out empty keys
+            let valid_keys: Vec<String> = self.configs.notification.server_chan_keys
+                .iter()
+                .filter(|key| !key.trim().is_empty())
+                .cloned()
+                .collect();
+            
+            if !valid_keys.is_empty() {
+                // Create notifier with valid keys
+                let notifier = ServerChanNotifier::new_with_keys(&valid_keys);
+                self.notifier = Some(Arc::new(notifier));
+                self.add_log("Notification service enabled", Color32::GREEN);
+            } else {
+                self.notifier = None;
+                self.add_log("No valid ServerChan keys provided", Color32::YELLOW);
+            }
         } else {
             self.notifier = None;
-            self.add_log("Disabled ServerChan notifications", Color32::YELLOW);
+            self.add_log("Notification service disabled", Color32::YELLOW);
         }
         
         // Save configuration
@@ -532,31 +545,31 @@ impl MonitorApp {
         ui.separator();
         ui.add_space(10.0);
         
-        // Notification configuration area
-        ui.collapsing("Notification Settings", |ui| {
-            ui.add_space(5.0);
-            
-            ui.horizontal(|ui| {
-                ui.checkbox(&mut self.configs.notification.enabled, "Enable ServerChan Notifications");
-            });
-            
-            if self.configs.notification.enabled {
-                ui.add_space(5.0);
+        // Notification settings
+        ui.heading("Notification Settings");
+        ui.checkbox(&mut self.configs.notification.enabled, "Enable ServerChan Notifications");
+        
+        if self.configs.notification.enabled {
+            ui.label("ServerChan Keys (one per line):");
+            let mut keys_text = self.configs.notification.server_chan_keys.join("\n");
+            if ui.text_edit_multiline(&mut keys_text).changed() {
+                // Split by lines and filter out empty lines
+                let keys: Vec<String> = keys_text
+                    .lines()
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
                 
-                ui.horizontal(|ui| {
-                    ui.add_sized([120.0, 24.0], egui::Label::new("ServerChan Key:"));
-                    ui.add_sized([250.0, 24.0], egui::TextEdit::singleline(&mut self.configs.notification.server_chan_key)
-                        .hint_text("Enter your ServerChan key")
-                        .margin(egui::vec2(8.0, 4.0)));
-                });
-                
-                ui.add_space(10.0);
-                
-                if ui.button("Update Notification Settings").clicked() {
-                    self.update_notification_config();
+                // If no keys were entered, keep at least one empty string
+                if keys.is_empty() {
+                    self.configs.notification.server_chan_keys = vec![String::new()];
+                } else {
+                    self.configs.notification.server_chan_keys = keys;
                 }
+                
+                self.update_notification_config();
             }
-        });
+        }
         
         ui.add_space(10.0);
         ui.separator();
@@ -740,7 +753,7 @@ impl MonitorApp {
                 
                 ui.horizontal(|ui| {
                     ui.add_sized([label_width, 24.0], egui::Label::new("ServerChan Key:"));
-                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.configs.notification.server_chan_key)
+                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.configs.notification.server_chan_keys[0])
                         .hint_text("ServerChan API key")
                         .margin(egui::vec2(8.0, 4.0)));
                 });
@@ -776,7 +789,7 @@ impl MonitorApp {
                 
                 ui.horizontal(|ui| {
                     ui.add_sized([label_width, 24.0], egui::Label::new("ServerChan Key:"));
-                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.configs.notification.server_chan_key)
+                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.configs.notification.server_chan_keys[0])
                         .hint_text("ServerChan API key")
                         .margin(egui::vec2(8.0, 4.0)));
                 });
@@ -803,7 +816,7 @@ impl MonitorApp {
                 
                 ui.horizontal(|ui| {
                     ui.add_sized([label_width, 24.0], egui::Label::new("ServerChan Key:"));
-                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.configs.notification.server_chan_key)
+                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.configs.notification.server_chan_keys[0])
                         .hint_text("ServerChan API key")
                         .margin(egui::vec2(8.0, 4.0)));
                 });
