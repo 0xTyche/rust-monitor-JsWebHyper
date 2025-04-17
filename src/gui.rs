@@ -304,7 +304,7 @@ impl MonitorApp {
             self.task_handles[task_index] = None;
         }
         
-        let mut task_config = self.configs.tasks[task_index].clone();
+        let task_config = self.configs.tasks[task_index].clone();
         
         self.task_statuses[task_index] = TaskStatus::Running;
         

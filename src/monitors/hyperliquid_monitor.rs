@@ -95,7 +95,7 @@ impl HyperliquidMonitor {
         // API endpoint
         let url = "https://api.hyperliquid.xyz/info";
         
-        // Create request body
+        // Create request body - Use the proper request type for positions
         let data = json!({
             "type": "clearinghouseState",
             "user": self.address
@@ -114,18 +114,27 @@ impl HyperliquidMonitor {
             return Err(anyhow!("API request failed, status code: {}", status));
         }
         
-        // Parse response
+        // Parse response and add debug logging
         let json: Value = response.json()
             .await
             .map_err(|e| anyhow!("Parsing response failed: {}", e))?;
-            
+        
+        debug!("Position API response: {}", json.to_string());
+        
         // Extract positions from assetPositions field
-        if let Some(positions) = json.get("assetPositions") {
-            let pos = parse_positions(positions)?;
-            Ok(pos)
+        let positions = if let Some(positions) = json.get("assetPositions") {
+            parse_positions(positions)?
         } else {
-            Ok(vec![]) // Return empty Vec if no positions found
+            debug!("No assetPositions field found in response");
+            vec![] // Return empty Vec if no positions found
+        };
+        
+        debug!("Parsed {} positions", positions.len());
+        if !positions.is_empty() {
+            debug!("Position details: {:?}", positions);
         }
+        
+        Ok(positions)
     }
     
     /// Calculate hash of positions to detect changes
@@ -315,63 +324,39 @@ impl HyperliquidMonitor {
         
         // Calculate hash of current positions (hash value needs to be calculated even for empty positions)
         let positions_hash = self.calculate_positions_hash(&positions);
+        debug!("Current positions hash: {}, last hash: {:?}", positions_hash, self.last_positions_hash);
         
-        // No positions
-        if positions.is_empty() {
-            debug!("No contract positions found for user: {}", self.address);
+        // Check for first run
+        if self.last_positions_hash.is_none() {
+            debug!("First check for user: {}, positions count: {}", self.address, positions.len());
             
-            // Send notification for first check or when positions change to empty
-            if self.last_positions_hash.is_some() {
-                // Previously had positions but now none - Position closed notification
-                let change = Change {
-                    message: format!("close: {}", self.notes),
-                    details: format!(
-                        "User: {}\n\nNo active positions currently\n\nView more information: @https://hyperdash.info/trader/{}",
-                        self.address, self.address
-                    ),
-                };
-                
-                // Reset hash
-                self.last_positions_hash = None;
-                
-                return Ok(Some(change));
-            } else {
+            // First check with positions
+            let change = if positions.is_empty() {
                 // First check with no positions - Send initial empty positions notification
-                let change = Change {
+                debug!("Initial check with no positions");
+                Change {
                     message: format!("start: {}", self.notes),
                     details: format!(
                         "Started monitoring user: {}\n\nNo active positions currently\n\nView more information: @https://hyperdash.info/trader/{}",
                         self.address, self.address
                     ),
-                };
-                
-                // Record empty positions hash
-                self.last_positions_hash = Some(positions_hash);
-                
-                return Ok(Some(change));
-            }
-        }
-        
-        // Check if positions have changed
-        if let Some(last_hash) = &self.last_positions_hash {
-            if *last_hash != positions_hash {
-                // Positions have changed
-                debug!("Contract positions changed for user: {}", self.address);
+                }
+            } else {
+                // First check with positions
+                debug!("Initial check with {} positions", positions.len());
                 
                 // Create detailed position message
                 let mut position_details = String::new();
-                let mut title_parts = Vec::new();
-                
-                // Format the first position for the title
-                if !positions.is_empty() {
-                    let first_pos = &positions[0];
-                    title_parts.push(format!("Asset:{} Lever:{:.0}x Type:{} Entry price:{:.2}",
-                        first_pos.asset, first_pos.leverage, 
-                        first_pos.position_type, first_pos.entry_price));
-                }
+                let mut position_info_for_title = String::new();
                 
                 // Format all positions for details
                 for pos in &positions {
+                    // Prepare first position info for title
+                    if position_info_for_title.is_empty() {
+                        position_info_for_title = format!("Asset:{} Lever:{:.0}x Type:{} Entry price:{:.2}",
+                            pos.asset, pos.leverage, pos.position_type, pos.entry_price);
+                    }
+                    
                     position_details.push_str(&format!(
                         "Asset: {}\nLeverage: {:.0}x\nType: {}\nEntry price: {:.2}\nMark price: {:.2}\nPosition size: {:.4}\nPosition value: ${:.2}\nPNL: {:.2}%\n\n",
                         pos.asset, pos.leverage, pos.position_type, 
@@ -380,57 +365,93 @@ impl HyperliquidMonitor {
                     ));
                 }
                 
-                // Build change notification with notes as the remark
-                let change = Change {
-                    message: format!("{} {}", self.notes, title_parts.join(" | ")),
+                // Build change notification - Use "start: notes" format for initial notification
+                Change {
+                    message: format!("start: {}", self.notes),
                     details: format!(
-                        "User position changes:\n\n{}\nView more information: @https://hyperdash.info/trader/{}",
+                        "User's current positions:\n\n{}\nView more information: @https://hyperdash.info/trader/{}",
                         position_details.trim(), self.address
                     ),
-                };
-                
-                // Update last positions hash
-                self.last_positions_hash = Some(positions_hash);
-                
-                return Ok(Some(change));
-            }
-        } else {
-            // First check, send initial notification with positions
-            debug!("First time getting contract positions for user: {}", self.address);
-            
-            // Create detailed position message
-            let mut position_details = String::new();
-            let mut position_info_for_title = String::new();
-            
-            // Format all positions for details
-            for pos in &positions {
-                // Prepare first position info for title
-                if position_info_for_title.is_empty() {
-                    position_info_for_title = format!("Asset:{} Lever:{:.0}x Type:{} Entry price:{:.2}",
-                        pos.asset, pos.leverage, pos.position_type, pos.entry_price);
                 }
-                
-                position_details.push_str(&format!(
-                    "Asset: {}\nLeverage: {:.0}x\nType: {}\nEntry price: {:.2}\nMark price: {:.2}\nPosition size: {:.4}\nPosition value: ${:.2}\nPNL: {:.2}%\n\n",
-                    pos.asset, pos.leverage, pos.position_type, 
-                    pos.entry_price, pos.mark_price, pos.size, 
-                    pos.position_value, pos.pnl_percentage
-                ));
-            }
-            
-            // Build change notification - Use "start: notes" format for initial notification
-            let change = Change {
-                message: format!("start: {}", self.notes),
-                details: format!(
-                    "User's current positions:\n\n{}\nView more information: @https://hyperdash.info/trader/{}",
-                    position_details.trim(), self.address
-                ),
             };
             
-            // Update last positions hash
+            // Update last positions hash and return the change
+            let hash_clone = positions_hash.clone();
             self.last_positions_hash = Some(positions_hash);
-            
+            debug!("Updated last positions hash on first check: {}", hash_clone);
             return Ok(Some(change));
+        }
+        
+        // For subsequent checks, compare hash with previous
+        if let Some(last_hash) = &self.last_positions_hash {
+            debug!("Comparing position hashes - current: {}, last: {}", positions_hash, last_hash);
+            
+            if *last_hash != positions_hash {
+                debug!("Position hash changed: {} -> {}", last_hash, positions_hash);
+                
+                // Positions have changed
+                if positions.is_empty() {
+                    // Previously had positions but now none - Position closed notification
+                    debug!("Positions changed to empty");
+                    let change = Change {
+                        message: format!("close: {}", self.notes),
+                        details: format!(
+                            "User: {}\n\nNo active positions currently\n\nView more information: @https://hyperdash.info/trader/{}",
+                            self.address, self.address
+                        ),
+                    };
+                    
+                    // Update last positions hash
+                    let hash_clone = positions_hash.clone();
+                    self.last_positions_hash = Some(positions_hash);
+                    debug!("Updated positions hash after change to empty: {}", hash_clone);
+                    
+                    return Ok(Some(change));
+                } else {
+                    // Positions have changed and there are current positions
+                    debug!("Positions changed, now has {} positions", positions.len());
+                    
+                    // Create detailed position message
+                    let mut position_details = String::new();
+                    let mut title_parts = Vec::new();
+                    
+                    // Format the first position for the title
+                    if !positions.is_empty() {
+                        let first_pos = &positions[0];
+                        title_parts.push(format!("Asset:{} Lever:{:.0}x Type:{} Entry price:{:.2}",
+                            first_pos.asset, first_pos.leverage, 
+                            first_pos.position_type, first_pos.entry_price));
+                    }
+                    
+                    // Format all positions for details
+                    for pos in &positions {
+                        position_details.push_str(&format!(
+                            "Asset: {}\nLeverage: {:.0}x\nType: {}\nEntry price: {:.2}\nMark price: {:.2}\nPosition size: {:.4}\nPosition value: ${:.2}\nPNL: {:.2}%\n\n",
+                            pos.asset, pos.leverage, pos.position_type, 
+                            pos.entry_price, pos.mark_price, pos.size, 
+                            pos.position_value, pos.pnl_percentage
+                        ));
+                    }
+                    
+                    // Build change notification with notes as the remark
+                    let change = Change {
+                        message: format!("{} {}", self.notes, title_parts.join(" | ")),
+                        details: format!(
+                            "User position changes:\n\n{}\nView more information: @https://hyperdash.info/trader/{}",
+                            position_details.trim(), self.address
+                        ),
+                    };
+                    
+                    // Update last positions hash
+                    let hash_clone = positions_hash.clone();
+                    self.last_positions_hash = Some(positions_hash);
+                    debug!("Updated positions hash after position change: {}", hash_clone);
+                    
+                    return Ok(Some(change));
+                }
+            } else {
+                debug!("No position changes detected, hash remained: {}", positions_hash);
+            }
         }
         
         Ok(None)
@@ -493,23 +514,31 @@ fn parse_positions(data: &Value) -> Result<Vec<PositionInfo>> {
     
     // Try to parse position data from JSON response
     if let Some(positions_array) = data.as_array() {
+        debug!("Found {} position entries to parse", positions_array.len());
+        
         for pos in positions_array {
-            if let (Some(coin), Some(position)) = (pos.get("coin"), pos.get("position")) {
-                
-                // Parse basic data
-                let asset = coin.as_str().unwrap_or("Unknown").to_string();
-                
+            debug!("Processing position: {}", pos);
+            
+            // Updated position parsing logic to match API response format
+            let asset = pos.get("coin").and_then(|c| c.as_str()).unwrap_or("Unknown").to_string();
+            
+            if let Some(position) = pos.get("position") {
                 // Parse position direction and size
-                let szi = position["szi"].as_str().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+                let szi = position.get("szi").and_then(|s| s.as_str()).unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+                if szi == 0.0 {
+                    debug!("Skipping position with zero size for {}", asset);
+                    continue; // Skip positions with zero size
+                }
+                
                 let position_type = if szi > 0.0 { "long".to_string() } else { "short".to_string() };
                 let size = szi.abs();
                 
                 // Parse entry price and mark price
-                let entry_price = position["entryPx"].as_str().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
-                let mark_price = pos["markPx"].as_str().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+                let entry_price = position.get("entryPx").and_then(|p| p.as_str()).unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+                let mark_price = pos.get("markPx").and_then(|p| p.as_str()).unwrap_or("0").parse::<f64>().unwrap_or(0.0);
                 
                 // Parse leverage
-                let leverage = pos["leverage"].as_str().unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+                let leverage = pos.get("leverage").and_then(|l| l.as_str()).unwrap_or("0").parse::<f64>().unwrap_or(0.0);
                 
                 // Calculate position value and profit/loss percentage
                 let position_value = size * mark_price;
@@ -525,6 +554,9 @@ fn parse_positions(data: &Value) -> Result<Vec<PositionInfo>> {
                     0.0
                 };
                 
+                debug!("Successfully parsed position: {} {} size={} entry={} mark={}", 
+                       asset, position_type, size, entry_price, mark_price);
+                
                 positions.push(PositionInfo {
                     asset,
                     leverage,
@@ -535,10 +567,15 @@ fn parse_positions(data: &Value) -> Result<Vec<PositionInfo>> {
                     position_value,
                     pnl_percentage,
                 });
+            } else {
+                debug!("Position field not found for {}", asset);
             }
         }
+    } else {
+        debug!("Position data is not an array");
     }
     
+    debug!("Returning {} parsed positions", positions.len());
     Ok(positions)
 }
 
