@@ -15,6 +15,8 @@ pub struct StaticMonitor {
     last_content: Option<String>,
     /// HTTP client
     client: Client,
+    /// User-provided notes/remarks
+    notes: String,
 }
 
 impl StaticMonitor {
@@ -31,6 +33,23 @@ impl StaticMonitor {
             interval_secs,
             last_content: None,
             client,
+            notes: url.to_string(), // Default to using URL as the note
+        }
+    }
+
+    /// Create a new static webpage monitor with notes
+    pub fn new_with_notes(url: &str, selector: &str, interval_secs: u64, notes: &str) -> Self {
+        let mut monitor = Self::new(url, selector, interval_secs);
+        if !notes.trim().is_empty() {
+            monitor.notes = notes.to_string();
+        }
+        monitor
+    }
+
+    /// Set notes/remarks
+    pub fn set_notes(&mut self, notes: &str) {
+        if !notes.trim().is_empty() {
+            self.notes = notes.to_string();
         }
     }
     
@@ -112,13 +131,13 @@ impl Monitor for StaticMonitor {
                 if let Some(last_content) = &self.last_content {
                     if *last_content != current_content {
                         // Content has changed
-                        // 创建更易读的变化描述
+                        // Create more readable change description
                         let change_description = self.generate_change_description(last_content, &current_content);
                         
                         let change = Change {
-                            message: format!("Webpage content changed: {}", self.url),
+                            message: format!("{} {}", self.notes, change_description),
                             details: format!(
-                                "变化的内容：\n{}\n\n当前的内容长度：{} 字节\n\n之前的内容长度：{} 字节", 
+                                "Changes:\n{}\n\nCurrent content length: {} bytes\n\nPrevious content length: {} bytes", 
                                 change_description,
                                 current_content.len(), 
                                 last_content.len()
@@ -136,8 +155,8 @@ impl Monitor for StaticMonitor {
                     
                     // Create change for initial content
                     let change = Change {
-                        message: format!("Initial webpage content: {}", self.url),
-                        details: format!("初始内容长度: {} 字节", current_content.len()),
+                        message: format!("start: {}", self.notes),
+                        details: format!("Initial content length: {} bytes", current_content.len()),
                     };
                     
                     // Store the content
@@ -161,5 +180,9 @@ impl Monitor for StaticMonitor {
     
     fn get_name(&self) -> String {
         format!("Static webpage monitor for {}", self.url)
+    }
+
+    fn get_notes(&self) -> String {
+        self.notes.clone()
     }
 } 

@@ -25,6 +25,9 @@ pub trait Monitor: Send + Sync {
     
     /// Get monitor name or description for notifications
     fn get_name(&self) -> String;
+
+    /// Get monitor notes or remarks
+    fn get_notes(&self) -> String;
 }
 
 impl Display for Change {

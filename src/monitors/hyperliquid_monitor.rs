@@ -266,13 +266,13 @@ impl HyperliquidMonitor {
                     asset, side, asset, price, size, formatted_time
                 );
                 
-                // Build change notification
+                // Build change notification with notes
                 let change = Change {
-                    message: format!("Detected new spot transaction: {} {}", asset, side),
+                    message: format!("{} - {}", self.notes, change_description),
                     details: format!(
-                        "Changed content:\nUser: {}\nAsset: {}\nSide: {}\nPrice: {}\nSize: {}\nTime: {}\nTransaction ID: {}\n\nPrevious transaction ID: {}",
+                        "Changed content:\nUser: {}\nAsset: {}\nSide: {}\nPrice: {}\nSize: {}\nTime: {}\nTransaction ID: {}\n\nPrevious transaction ID: {}\n\nNotes: {}",
                         self.address, asset, side, price, size, formatted_time, trade_id,
-                        last_id
+                        last_id, self.notes
                     ),
                 };
                 
@@ -295,12 +295,12 @@ impl HyperliquidMonitor {
             // Format transaction time
             let formatted_time = format_timestamp(time);
             
-            // Build initial notification
+            // Build initial notification with notes
             let change = Change {
-                message: format!("Initial spot transaction data for {}", self.address),
+                message: format!("Started monitoring: {}", self.notes),
                 details: format!(
-                    "Initial monitoring data:\nUser: {}\nLatest transaction:\nAsset: {}\nSide: {}\nPrice: {}\nSize: {}\nTime: {}\nTransaction ID: {}",
-                    self.address, asset, side, price, size, formatted_time, trade_id
+                    "Initial monitoring data:\nUser: {}\nLatest transaction:\nAsset: {}\nSide: {}\nPrice: {}\nSize: {}\nTime: {}\nTransaction ID: {}\n\nNotes: {}",
+                    self.address, asset, side, price, size, formatted_time, trade_id, self.notes
                 ),
             };
             
@@ -316,13 +316,15 @@ impl HyperliquidMonitor {
     /// Check user contract positions changes
     async fn check_contract_positions(&mut self) -> Result<Option<Change>> {
         if !self.monitor_contract {
+            debug!("Contract monitoring is disabled");
             return Ok(None);
         }
         
         // Get current positions
         let positions = self.get_contract_positions().await?;
+        debug!("Retrieved {} positions", positions.len());
         
-        // Calculate hash of current positions (hash value needs to be calculated even for empty positions)
+        // Calculate hash of current positions
         let positions_hash = self.calculate_positions_hash(&positions);
         debug!("Current positions hash: {}, last hash: {:?}", positions_hash, self.last_positions_hash);
         
@@ -332,17 +334,15 @@ impl HyperliquidMonitor {
             
             // First check with positions
             let change = if positions.is_empty() {
-                // First check with no positions - Send initial empty positions notification
                 debug!("Initial check with no positions");
                 Change {
-                    message: format!("start: {}", self.notes),
+                    message: format!("Started monitoring: {}", self.notes),
                     details: format!(
-                        "Started monitoring user: {}\n\nNo active positions currently\n\nView more information: @https://hyperdash.info/trader/{}",
-                        self.address, self.address
+                        "Started monitoring user: {}\n\nNo active positions currently\n\nView more information: @https://hyperdash.info/trader/{}\n\nNotes: {}",
+                        self.address, self.address, self.notes
                     ),
                 }
             } else {
-                // First check with positions
                 debug!("Initial check with {} positions", positions.len());
                 
                 // Create detailed position message
@@ -365,12 +365,12 @@ impl HyperliquidMonitor {
                     ));
                 }
                 
-                // Build change notification - Use "start: notes" format for initial notification
+                // Build change notification with notes
                 Change {
-                    message: format!("start: {}", self.notes),
+                    message: format!("Started monitoring: {}", self.notes),
                     details: format!(
-                        "User's current positions:\n\n{}\nView more information: @https://hyperdash.info/trader/{}",
-                        position_details.trim(), self.address
+                        "User's current positions:\n\n{}\nView more information: @https://hyperdash.info/trader/{}\n\nNotes: {}",
+                        position_details.trim(), self.address, self.notes
                     ),
                 }
             };
@@ -379,6 +379,7 @@ impl HyperliquidMonitor {
             let hash_clone = positions_hash.clone();
             self.last_positions_hash = Some(positions_hash);
             debug!("Updated last positions hash on first check: {}", hash_clone);
+            debug!("Returning change: {}", change.message);
             return Ok(Some(change));
         }
         
@@ -390,25 +391,16 @@ impl HyperliquidMonitor {
                 debug!("Position hash changed: {} -> {}", last_hash, positions_hash);
                 
                 // Positions have changed
-                if positions.is_empty() {
-                    // Previously had positions but now none - Position closed notification
+                let change = if positions.is_empty() {
                     debug!("Positions changed to empty");
-                    let change = Change {
-                        message: format!("close: {}", self.notes),
+                    Change {
+                        message: format!("No active positions - {}", self.notes),
                         details: format!(
-                            "User: {}\n\nNo active positions currently\n\nView more information: @https://hyperdash.info/trader/{}",
-                            self.address, self.address
+                            "User: {}\n\nNo active positions currently\n\nView more information: @https://hyperdash.info/trader/{}\n\nNotes: {}",
+                            self.address, self.address, self.notes
                         ),
-                    };
-                    
-                    // Update last positions hash
-                    let hash_clone = positions_hash.clone();
-                    self.last_positions_hash = Some(positions_hash);
-                    debug!("Updated positions hash after change to empty: {}", hash_clone);
-                    
-                    return Ok(Some(change));
+                    }
                 } else {
-                    // Positions have changed and there are current positions
                     debug!("Positions changed, now has {} positions", positions.len());
                     
                     // Create detailed position message
@@ -433,22 +425,22 @@ impl HyperliquidMonitor {
                         ));
                     }
                     
-                    // Build change notification with notes as the remark
-                    let change = Change {
-                        message: format!("{} {}", self.notes, title_parts.join(" | ")),
+                    // Build change notification with notes
+                    Change {
+                        message: format!("{} - {}", self.notes, title_parts.join(" | ")),
                         details: format!(
-                            "User position changes:\n\n{}\nView more information: @https://hyperdash.info/trader/{}",
-                            position_details.trim(), self.address
+                            "User position changes:\n\n{}\nView more information: @https://hyperdash.info/trader/{}\n\nNotes: {}",
+                            position_details.trim(), self.address, self.notes
                         ),
-                    };
-                    
-                    // Update last positions hash
-                    let hash_clone = positions_hash.clone();
-                    self.last_positions_hash = Some(positions_hash);
-                    debug!("Updated positions hash after position change: {}", hash_clone);
-                    
-                    return Ok(Some(change));
-                }
+                    }
+                };
+                
+                // Update last positions hash
+                let hash_clone = positions_hash.clone();
+                self.last_positions_hash = Some(positions_hash);
+                debug!("Updated positions hash after change: {}", hash_clone);
+                debug!("Returning change: {}", change.message);
+                return Ok(Some(change));
             } else {
                 debug!("No position changes detected, hash remained: {}", positions_hash);
             }
@@ -609,6 +601,10 @@ impl Monitor for HyperliquidMonitor {
     }
     
     fn get_name(&self) -> String {
-        format!("Hyperliquid account monitor for {}", self.address)
+        format!("Hyperliquid monitor for {}", self.address)
+    }
+
+    fn get_notes(&self) -> String {
+        self.notes.clone()
     }
 } 

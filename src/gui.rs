@@ -98,6 +98,8 @@ pub struct TaskConfig {
     pub interval_secs: u64,
     /// Whether it's enabled
     pub enabled: bool,
+    /// Notes for the task
+    pub notes: String,
 }
 
 impl Default for TaskConfig {
@@ -112,6 +114,7 @@ impl Default for TaskConfig {
             monitor_contract: false,
             interval_secs: 60,
             enabled: true,
+            notes: String::new(),
         }
     }
 }
@@ -318,36 +321,42 @@ impl MonitorApp {
         // Record task name for later use
         let task_name = task_config.name.clone();
         
+        // Create monitor based on task type
+        let monitor: Box<dyn Monitor> = match task_config.task_type.as_str() {
+            "Static" => {
+                Box::new(StaticMonitor::new_with_notes(
+                    &task_config.url,
+                    &task_config.selector,
+                    task_config.interval_secs,
+                    &task_config.notes,
+                ))
+            }
+            "Api" => {
+                Box::new(ApiMonitor::new_with_notes(
+                    task_config.url,
+                    task_config.selector,
+                    task_config.interval_secs,
+                    &task_config.notes,
+                ))
+            }
+            "Hyperliquid" => {
+                Box::new(HyperliquidMonitor::new_with_notes(
+                    &task_config.address,
+                    task_config.interval_secs,
+                    task_config.monitor_spot,
+                    task_config.monitor_contract,
+                    &task_config.notes,
+                ))
+            }
+            _ => {
+                self.add_log(&format!("Unknown task type: {}", task_config.task_type), Color32::RED);
+                return;
+            }
+        };
+        
         // Create monitoring task
         let handle = self.runtime.spawn(async move {
-            match task_config.task_type.as_str() {
-                "Static Web" => {
-                    let mut monitor = StaticMonitor::new(&task_config.url, &task_config.selector, task_config.interval_secs);
-                    run_monitor_task(task_index, &mut monitor, notifier, tx).await;
-                },
-                "API Monitor" => {
-                    let mut monitor = ApiMonitor::new(
-                        task_config.url, 
-                        task_config.selector, 
-                        task_config.interval_secs
-                    );
-                    run_monitor_task(task_index, &mut monitor, notifier, tx).await;
-                },
-                "Hyperliquid" => {
-                    let mut monitor = HyperliquidMonitor::new(
-                        &task_config.address,
-                        task_config.interval_secs,
-                        task_config.monitor_spot,
-                        task_config.monitor_contract
-                    );
-                    run_monitor_task(task_index, &mut monitor, notifier, tx).await;
-                },
-                _ => {
-                    let msg = format!("Unknown task type: {}", task_config.task_type);
-                    debug!("[{}] Error: {}", task_config.name, msg);
-                    return;
-                }
-            }
+            run_monitor_task(task_index, monitor, notifier, tx).await;
         });
         
         self.task_handles[task_index] = Some(handle);
@@ -740,7 +749,7 @@ impl MonitorApp {
                 
                 ui.horizontal(|ui| {
                     ui.add_sized([label_width, 24.0], egui::Label::new("Notes:"));
-                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.name)
+                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.notes)
                         .hint_text("Optional notes")
                         .margin(egui::vec2(8.0, 4.0)));
                 });
@@ -776,7 +785,7 @@ impl MonitorApp {
                 
                 ui.horizontal(|ui| {
                     ui.add_sized([label_width, 24.0], egui::Label::new("Notes:"));
-                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.name)
+                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.notes)
                         .hint_text("Optional notes")
                         .margin(egui::vec2(8.0, 4.0)));
                 });
@@ -803,7 +812,7 @@ impl MonitorApp {
                 
                 ui.horizontal(|ui| {
                     ui.add_sized([label_width, 24.0], egui::Label::new("Notes:"));
-                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.name)
+                    ui.add_sized([input_width, 24.0], egui::TextEdit::singleline(&mut self.editing_task.notes)
                         .hint_text("Optional notes")
                         .margin(egui::vec2(8.0, 4.0)));
                 });
@@ -1025,9 +1034,9 @@ impl eframe::App for MonitorApp {
 }
 
 /// Run monitoring task
-async fn run_monitor_task<M: Monitor>(
+async fn run_monitor_task<M: Monitor + ?Sized>(
     task_index: usize, 
-    monitor: &mut M, 
+    mut monitor: Box<M>, 
     notifier: Option<Arc<ServerChanNotifier>>,
     tx: mpsc::Sender<Message>
 ) {
@@ -1041,7 +1050,7 @@ async fn run_monitor_task<M: Monitor>(
         Ok(Some(change)) => {
             // This is unusual - we already have a change on first check
             // Still, we'll treat it as our initial status
-            let initial_message = format!("Started monitoring: {}", change.message);
+            let initial_message = format!("[{}] Started monitoring: {}", monitor.get_notes(), change.message);
             
             // Send notification about monitoring start with initial content
             if let Some(notifier) = &notifier {
@@ -1065,7 +1074,7 @@ async fn run_monitor_task<M: Monitor>(
             // Normal case - no change but we have initial content
             // Get task name and use it in initial notification
             let task_note = &monitor.get_name();
-            let initial_message = format!("Started monitoring: {}", task_note);
+            let initial_message = format!("[{}] Started monitoring: {}", monitor.get_notes(), task_note);
             let details = format!("Initial content captured. Will notify when changes are detected.");
             
             // Send notification about monitoring start
@@ -1113,9 +1122,10 @@ async fn run_monitor_task<M: Monitor>(
                 // Send change detection message
                 let _ = tx.send(Message::ChangeDetected(task_index, change.clone())).await;
                 
-                // Send notification
+                // Send notification with notes in title
                 if let Some(notifier) = &notifier {
-                    if let Err(e) = notifier.send(&change.message, &change.details).await {
+                    let notification_title = format!("[{}] {}", monitor.get_notes(), change.message);
+                    if let Err(e) = notifier.send(&notification_title, &change.details).await {
                         let _ = tx.send(Message::Log(
                             format!("Failed to send notification: {}", e),
                             Color32::RED

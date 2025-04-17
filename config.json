@@ -1,66 +1,11 @@
 {
   "notification": {
-    "enabled": true,
+    "enabled": false,
     "server_chan_key": "SCT267319T1JU2krXcV93959svLByRvRWm"
   },
   "tasks": [
     {
-      "name": "24h 683w",
-      "task_type": "Hyperliquid",
-      "url": "https://example.com",
-      "selector": "",
-      "address": "0xe4d31c2541A9cE596419879B1A46Ffc7cD202c62",
-      "monitor_spot": false,
-      "monitor_contract": true,
-      "interval_secs": 10,
-      "enabled": true
-    },
-    {
-      "name": "pre mstock trade",
-      "task_type": "Hyperliquid",
-      "url": "https://example.com",
-      "selector": "",
-      "address": "0xe4d31c2541A9cE596419879B1A46Ffc7cD202c62",
-      "monitor_spot": false,
-      "monitor_contract": true,
-      "interval_secs": 60,
-      "enabled": true
-    },
-    {
-      "name": "boom make185.7wu",
-      "task_type": "Hyperliquid",
-      "url": "https://example.com",
-      "selector": "",
-      "address": "0xf3F496C9486BE5924a93D67e98298733Bb47057c",
-      "monitor_spot": false,
-      "monitor_contract": true,
-      "interval_secs": 10,
-      "enabled": true
-    },
-    {
-      "name": "Information trade",
-      "task_type": "Hyperliquid",
-      "url": "https://example.com",
-      "selector": "",
-      "address": "0xf3F496C9486BE5924a93D67e98298733Bb47057c",
-      "monitor_spot": false,
-      "monitor_contract": true,
-      "interval_secs": 10,
-      "enabled": true
-    },
-    {
-      "name": "x40 long make 510w",
-      "task_type": "Hyperliquid",
-      "url": "https://example.com",
-      "selector": "",
-      "address": "0xf3F496C9486BE5924a93D67e98298733Bb47057c",
-      "monitor_spot": false,
-      "monitor_contract": true,
-      "interval_secs": 60,
-      "enabled": true
-    },
-    {
-      "name": "Test",
+      "name": "New Task",
       "task_type": "Hyperliquid",
       "url": "https://example.com",
       "selector": "",
@@ -68,7 +13,8 @@
       "monitor_spot": false,
       "monitor_contract": true,
       "interval_secs": 60,
-      "enabled": true
+      "enabled": true,
+      "notes": "test"
     }
   ]
 }

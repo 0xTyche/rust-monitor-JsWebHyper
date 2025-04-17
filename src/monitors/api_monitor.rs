@@ -17,16 +17,36 @@ pub struct ApiMonitor {
     last_value: Option<String>,
     /// Check interval (seconds)
     interval_secs: u64,
+    /// User-provided notes/remarks
+    notes: String,
 }
 
 impl ApiMonitor {
     /// Create a new API monitor
     pub fn new(url: String, selector: String, interval_secs: u64) -> Self {
+        let url_clone = url.clone();
         ApiMonitor {
             url,
             selector,
             last_value: None,
             interval_secs,
+            notes: url_clone, // Use cloned URL as the note
+        }
+    }
+
+    /// Create a new API monitor with notes
+    pub fn new_with_notes(url: String, selector: String, interval_secs: u64, notes: &str) -> Self {
+        let mut monitor = Self::new(url, selector, interval_secs);
+        if !notes.trim().is_empty() {
+            monitor.notes = notes.to_string();
+        }
+        monitor
+    }
+
+    /// Set notes/remarks
+    pub fn set_notes(&mut self, notes: &str) {
+        if !notes.trim().is_empty() {
+            self.notes = notes.to_string();
         }
     }
 
@@ -152,7 +172,7 @@ impl Monitor for ApiMonitor {
                     
                     // Create change object with initial value
                     let change = Change {
-                        message: format!("Initial API data from {}", self.url),
+                        message: format!("start: {}", self.notes),
                         details: format!("JSONPath: {}\nInitial value: {}\n\nNote: This may represent multiple values if your JSONPath selector matches multiple elements.", 
                             selector, new_value),
                     };
@@ -167,7 +187,7 @@ impl Monitor for ApiMonitor {
                     debug!("Could not extract initial data using selector: {}", self.selector);
                     self.last_value = None;
                     Ok(Some(Change {
-                        message: format!("Could not extract initial data from API response"),
+                        message: format!("start: {}", self.notes),
                         details: format!("URL: {}\nSelector: {}\n\nThe JSONPath selector did not match any data. Please check if your selector is correct.", 
                             self.url, self.selector),
                     }))
@@ -186,8 +206,8 @@ impl Monitor for ApiMonitor {
                         
                         // Create change object with old_value (already borrowed)
                         let change = Change {
-                            message: format!("API data changed at {}", self.url),
-                            details: format!("JSONPath: {}\n\n变化的内容：\n{}\n\n当前的内容：\n{}\n\n之前的内容：\n{}\n\nNote: If your JSONPath selector matches multiple elements, this represents the combined changes.", 
+                            message: format!("{} {}", self.notes, change_description),
+                            details: format!("JSONPath: {}\n\nChanges:\n{}\n\nCurrent value:\n{}\n\nPrevious value:\n{}\n\nNote: If your JSONPath selector matches multiple elements, this represents the combined changes.", 
                                 selector, change_description, &new_value, old_value),
                         };
                         
@@ -206,7 +226,7 @@ impl Monitor for ApiMonitor {
                     // Could not extract data
                     debug!("Could not extract data using selector: {}", self.selector);
                     Ok(Some(Change {
-                        message: format!("Could not extract data from API response"),
+                        message: format!("{} - Data extraction failed", self.notes),
                         details: format!("URL: {}\nSelector: {}\n\nThe JSONPath selector did not match any data after a previous successful match. The data structure may have changed.", 
                             self.url, self.selector),
                     }))
@@ -221,5 +241,9 @@ impl Monitor for ApiMonitor {
     
     fn get_name(&self) -> String {
         format!("API monitor for {}", self.url)
+    }
+
+    fn get_notes(&self) -> String {
+        self.notes.clone()
     }
 } 
