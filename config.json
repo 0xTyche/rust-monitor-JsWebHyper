@@ -1,7 +1,7 @@
 {
   "notification": {
-    "enabled": false,
-    "server_chan_key": "SCT267319T1JU2krXcV93959svLByRvRWm"
+    "enabled": true,
+    "server_chan_key": "SCT271420TLvlS0MVZewxEaI9Bft5yA9mj"
   },
   "tasks": [
     {
@@ -14,7 +14,19 @@
       "monitor_contract": true,
       "interval_secs": 60,
       "enabled": true,
-      "notes": "test"
+      "notes": "无敌"
+    },
+    {
+      "name": "New Task",
+      "task_type": "Hyperliquid",
+      "url": "https://example.com",
+      "selector": "",
+      "address": "0x2ba553d9f990a3b66b03b2dc0d030dfc1c061036",
+      "monitor_spot": false,
+      "monitor_contract": true,
+      "interval_secs": 1,
+      "enabled": true,
+      "notes": "测试hyeper监控"
     }
   ]
 }

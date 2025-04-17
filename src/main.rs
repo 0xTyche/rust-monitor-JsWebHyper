@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use clap::{Parser, Subcommand};
-use log::{info, error};
+use log::{info, error, debug};
 use anyhow::Result;
 use dotenv::dotenv;
 
@@ -83,7 +83,16 @@ enum Commands {
 async fn main() -> Result<()> {
     // Initialize environment variables and logging
     dotenv().ok();
-    env_logger::init();
+    
+    // Initialize logger with debug level
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug"))
+        .format_timestamp(None)
+        .format_level(true)
+        .format_target(false)
+        .init();
+    
+    info!("Starting Hyperliquid Monitor...");
+    debug!("Debug logging enabled");
     
     let cli = Cli::parse();
     

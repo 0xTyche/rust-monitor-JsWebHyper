@@ -7,7 +7,7 @@ use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 use anyhow::Result;
 use dotenv::dotenv;
-use log::{debug, LevelFilter};
+use log::{debug, info};
 use std::collections::VecDeque;
 use std::fs;
 use std::path::Path;
@@ -1159,24 +1159,24 @@ async fn run_monitor_task<M: Monitor + ?Sized>(
 }
 
 fn main() -> Result<(), eframe::Error> {
-    // Set up logging
-    env_logger::builder()
-        .filter_level(LevelFilter::Info)
+    // Initialize logger with debug level
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug"))
+        .format_timestamp(None)
+        .format_level(true)
+        .format_target(false)
         .init();
     
-    // Run eframe application with updated options
-    let native_options = eframe::NativeOptions {
-        initial_window_size: Some(Vec2::new(800.0, 600.0)),
-        min_window_size: Some(Vec2::new(600.0, 400.0)),
-        follow_system_theme: true,
-        default_theme: eframe::Theme::Light,
-        // Remove incompatible options
+    info!("Starting Hyperliquid Monitor GUI...");
+    debug!("Debug logging enabled for GUI");
+    
+    let options = eframe::NativeOptions {
+        initial_window_size: Some(egui::vec2(800.0, 600.0)),
         ..Default::default()
     };
     
     eframe::run_native(
-        "Hyperliquid Monitoring System",
-        native_options,
-        Box::new(|cc| Box::new(MonitorApp::new(cc)))
+        "Hyperliquid Monitor",
+        options,
+        Box::new(|cc| Box::new(MonitorApp::new(cc))),
     )
 } 

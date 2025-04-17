@@ -101,6 +101,9 @@ impl HyperliquidMonitor {
             "user": self.address
         });
         
+        debug!("Sending request to API: {}", url);
+        debug!("Request body: {}", data.to_string());
+        
         // Send POST request
         let response = self.client.post(url)
             .header(header::CONTENT_TYPE, "application/json")
@@ -119,10 +122,11 @@ impl HyperliquidMonitor {
             .await
             .map_err(|e| anyhow!("Parsing response failed: {}", e))?;
         
-        debug!("Position API response: {}", json.to_string());
+        debug!("Full API response: {}", json.to_string());
         
         // Extract positions from assetPositions field
         let positions = if let Some(positions) = json.get("assetPositions") {
+            debug!("Found assetPositions field in response");
             parse_positions(positions)?
         } else {
             debug!("No assetPositions field found in response");
@@ -131,7 +135,9 @@ impl HyperliquidMonitor {
         
         debug!("Parsed {} positions", positions.len());
         if !positions.is_empty() {
-            debug!("Position details: {:?}", positions);
+            for pos in &positions {
+                debug!("Position details: {:?}", pos);
+            }
         }
         
         Ok(positions)
@@ -511,53 +517,72 @@ fn parse_positions(data: &Value) -> Result<Vec<PositionInfo>> {
         for pos in positions_array {
             debug!("Processing position: {}", pos);
             
-            // Updated position parsing logic to match API response format
-            let asset = pos.get("coin").and_then(|c| c.as_str()).unwrap_or("Unknown").to_string();
+            // Extract asset name from coin field
+            let asset = pos.get("position")
+                .and_then(|p| p.get("coin"))
+                .and_then(|c| c.as_str())
+                .unwrap_or("Unknown")
+                .to_string();
+            
+            debug!("Extracted asset name: {}", asset);
             
             if let Some(position) = pos.get("position") {
                 // Parse position direction and size
-                let szi = position.get("szi").and_then(|s| s.as_str()).unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+                let szi = position.get("szi")
+                    .and_then(|s| s.as_str())
+                    .unwrap_or("0")
+                    .parse::<f64>()
+                    .unwrap_or(0.0);
+                    
+                debug!("Extracted position size: {}", szi);
+                    
                 if szi == 0.0 {
                     debug!("Skipping position with zero size for {}", asset);
                     continue; // Skip positions with zero size
                 }
                 
-                let position_type = if szi > 0.0 { "long".to_string() } else { "short".to_string() };
+                let position_type = if szi > 0.0 { "long" } else { "short" }.to_string();
                 let size = szi.abs();
                 
-                // Parse entry price and mark price
-                let entry_price = position.get("entryPx").and_then(|p| p.as_str()).unwrap_or("0").parse::<f64>().unwrap_or(0.0);
-                let mark_price = pos.get("markPx").and_then(|p| p.as_str()).unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+                // Parse entry price
+                let entry_price = position.get("entryPx")
+                    .and_then(|p| p.as_str())
+                    .unwrap_or("0")
+                    .parse::<f64>()
+                    .unwrap_or(0.0);
+                
+                // Parse position value
+                let position_value = position.get("positionValue")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("0")
+                    .parse::<f64>()
+                    .unwrap_or(0.0);
+                
+                // Parse unrealized PNL
+                let unrealized_pnl = position.get("unrealizedPnl")
+                    .and_then(|p| p.as_str())
+                    .unwrap_or("0")
+                    .parse::<f64>()
+                    .unwrap_or(0.0);
                 
                 // Parse leverage
-                let leverage = pos.get("leverage").and_then(|l| l.as_str()).unwrap_or("0").parse::<f64>().unwrap_or(0.0);
+                let leverage = position.get("leverage")
+                    .and_then(|l| l.get("value"))
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(0.0);
                 
-                // Calculate position value and profit/loss percentage
-                let position_value = size * mark_price;
-                let entry_value = size * entry_price;
-                let pnl = if position_type == "long" {
-                    position_value - entry_value
-                } else {
-                    entry_value - position_value
-                };
-                let pnl_percentage = if entry_value > 0.0 {
-                    (pnl / entry_value) * 100.0
-                } else {
-                    0.0
-                };
-                
-                debug!("Successfully parsed position: {} {} size={} entry={} mark={}", 
-                       asset, position_type, size, entry_price, mark_price);
+                debug!("Extracted prices - entry: {}, position value: {}, unrealized PNL: {}, leverage: {}", 
+                    entry_price, position_value, unrealized_pnl, leverage);
                 
                 positions.push(PositionInfo {
                     asset,
                     leverage,
                     position_type,
                     entry_price,
-                    mark_price,
+                    mark_price: 0.0, // Not available in the response
                     size,
                     position_value,
-                    pnl_percentage,
+                    pnl_percentage: unrealized_pnl,
                 });
             } else {
                 debug!("Position field not found for {}", asset);
