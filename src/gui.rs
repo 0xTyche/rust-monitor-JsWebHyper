@@ -323,7 +323,7 @@ impl MonitorApp {
         
         // Create monitor based on task type
         let monitor: Box<dyn Monitor> = match task_config.task_type.as_str() {
-            "Static" => {
+            "Static Web" => {
                 Box::new(StaticMonitor::new_with_notes(
                     &task_config.url,
                     &task_config.selector,
@@ -331,7 +331,7 @@ impl MonitorApp {
                     &task_config.notes,
                 ))
             }
-            "Api" => {
+            "API Monitor" => {
                 Box::new(ApiMonitor::new_with_notes(
                     task_config.url,
                     task_config.selector,
