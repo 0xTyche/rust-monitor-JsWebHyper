@@ -2,6 +2,25 @@
 
 A monitoring system developed based on Hyperliquid Rust SDK that can monitor website data changes, static webpage changes, and specific user trading activities.
 
+该项目完成了对静态网页、指定url请求返回的json数据、hyperliquid用户（现货、转账、合约）交易活动的监控，能在1s内能通过方糖酱将监控信息传达给用户，并且提供了图形界面和非图形界面。
+
+
+![homepage](./pictures/homepage.png)
+
+![api-monitor](./pictures/api-monitor.png)
+
+![static-web](./pictures/static-web.png)
+
+![hyper-monitor](./pictures/hyper-monitor.png)
+
+![info-static-web](./pictures/info-static-web.png)
+
+关于hyperliquid监控提示，在开启监控时，会自动先发送一遍当前监控对象的持有仓位情况，后续监控也会标明仓位的变化情况
+About hyperliquid monitoring, when monitoring is turned on, the current monitored object's holding position will be automatically sent first, and subsequent monitoring will also indicate the position changes.
+
+![info-hyper-monitor](./pictures/info-hyper-monitor.png)
+
+
 ## Feature Overview
 
 1. **API Data Monitoring**
@@ -188,13 +207,13 @@ This project uses the notification service provided by ServerChan, which support
 
 ## Recent Updates
 
-- **Version 0.1.2 (2023-04-09)**
+- **Version 0.1.2 (2025-04-09)**
   - Removed JavaScript monitoring functionality
   - Improved static webpage monitoring
   - Enhanced API monitoring capabilities
   - Optimized performance
 
-- **Version 0.1.1 (2023-04-09)**
+- **Version 0.1.1 (2025-04-09)**
   - Full English interface support for global users
   - Optimized code comments and documentation
   - Fixed notification formatting issues
@@ -207,4 +226,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Hyperliquid Rust SDK](https://github.com/hyperliquid-dex/hyperliquid-rust-sdk) - Provides the basic SDK for API access
 - [ServerChan](https://sct.ftqq.com/) - Provides push notification service
-- [egui](https://github.com/emilk/egui) - Provides graphical interface library 
+- [egui](https://github.com/emilk/egui) - Provides graphical interface library
