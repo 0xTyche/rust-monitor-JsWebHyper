@@ -4,21 +4,21 @@ A monitoring system developed based on Hyperliquid Rust SDK that can monitor web
 
 该项目完成了对静态网页、指定url请求返回的json数据、hyperliquid用户（现货、转账、合约）交易活动的监控，能在1s内能通过方糖酱将监控信息传达给用户，并且提供了图形界面和非图形界面。
 
-<div align="center">
+
 ![homepage](./pictures/homepage.png)
-</div>
 
-<div align="center">
+
+
 ![api-monitor](./pictures/api-monitor.png)
-</div>
 
-<div align="center">
+
+
 ![static-web](./pictures/static-web.png)
-</div>
 
-<div align="center">
+
+
 ![hyper-monitor](./pictures/hyper-monitor.png)
-</div>
+
 
 ![info-static-web](./pictures/info-static-web.png)
 
