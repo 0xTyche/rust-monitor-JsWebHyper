@@ -1,8 +1,10 @@
 {
   "notification": {
-    "enabled": false,
+    "enabled": true,
     "server_chan_keys": [
-      "SCT267319T1JU2krXcV93959svLByRvRWm"
+      "SCT271420TLvlS0MVZewxEaI9Bft5yA9mj",
+      "SCT267319T1JU2krXcV93959svLByRvRWm",
+      "SCT55952TTjaTIWgNs0llUVViMVjeAbDJ"
     ]
   },
   "tasks": [
@@ -29,6 +31,42 @@
       "interval_secs": 60,
       "enabled": true,
       "notes": "极限两分钟看多 ETH 获利 5000 美元"
+    },
+    {
+      "name": "New Task",
+      "task_type": "Hyperliquid",
+      "url": "https://example.com",
+      "selector": "",
+      "address": "0x3A9b02c14d967333cE68E353a64653E258da2BAa",
+      "monitor_spot": true,
+      "monitor_contract": false,
+      "interval_secs": 60,
+      "enabled": true,
+      "notes": "50倍杠杆683w 现货"
+    },
+    {
+      "name": "New Task",
+      "task_type": "Hyperliquid",
+      "url": "https://example.com",
+      "selector": "",
+      "address": "0xab3067c58811ade7aa17b58808db3b4c2e86f603",
+      "monitor_spot": false,
+      "monitor_contract": true,
+      "interval_secs": 60,
+      "enabled": true,
+      "notes": "50倍杠杆获利683w上游地址"
+    },
+    {
+      "name": "New Task",
+      "task_type": "Static Web",
+      "url": "https://github.com/Akrasia0/liz",
+      "selector": "",
+      "address": "",
+      "monitor_spot": true,
+      "monitor_contract": false,
+      "interval_secs": 1,
+      "enabled": true,
+      "notes": "github-liz"
     }
   ]
 }

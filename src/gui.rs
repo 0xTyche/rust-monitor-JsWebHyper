@@ -497,19 +497,17 @@ impl MonitorApp {
                 .filter(|key| !key.trim().is_empty())
                 .cloned()
                 .collect();
-            
+                
             if !valid_keys.is_empty() {
-                // Create notifier with valid keys
-                let notifier = ServerChanNotifier::new_with_keys(&valid_keys);
-                self.notifier = Some(Arc::new(notifier));
-                self.add_log("Notification service enabled", Color32::GREEN);
+                self.notifier = Some(Arc::new(ServerChanNotifier::new_with_keys(&valid_keys)));
+                debug!("Notification service initialized with {} keys", valid_keys.len());
             } else {
                 self.notifier = None;
-                self.add_log("No valid ServerChan keys provided", Color32::YELLOW);
+                debug!("No valid ServerChan keys found, notification service disabled");
             }
         } else {
             self.notifier = None;
-            self.add_log("Notification service disabled", Color32::YELLOW);
+            debug!("Notification service disabled");
         }
         
         // Save configuration

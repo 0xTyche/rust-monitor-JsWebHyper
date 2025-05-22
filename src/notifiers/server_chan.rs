@@ -116,6 +116,7 @@ impl Notifier for ServerChanNotifier {
         debug!("Sending ServerChan notification to {} keys: {}", self.keys.len(), title);
         
         let mut errors = Vec::new();
+        let mut success = false;
         
         // Send notification to all configured keys
         for key in &self.keys {
@@ -132,6 +133,7 @@ impl Notifier for ServerChanNotifier {
                         errors.push(format!("Failed to send notification to key {}: {}", key, message));
                     } else {
                         debug!("Notification sent successfully to key: {}", key);
+                        success = true;
                     }
                 },
                 Err(e) => {
@@ -140,10 +142,13 @@ impl Notifier for ServerChanNotifier {
             }
         }
         
-        if !errors.is_empty() {
-            return Err(anyhow!("Some notifications failed: {}", errors.join("; ")));
+        // If at least one notification was successful, we consider it a success
+        if success {
+            Ok(())
+        } else if !errors.is_empty() {
+            Err(anyhow!("All notifications failed: {}", errors.join("; ")))
+        } else {
+            Ok(())
         }
-        
-        Ok(())
     }
 } 
