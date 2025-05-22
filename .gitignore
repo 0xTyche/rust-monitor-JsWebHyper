@@ -31,3 +31,6 @@ Thumbs.db
 
 # Test data
 /test/
+
+# config.json
+config.json
